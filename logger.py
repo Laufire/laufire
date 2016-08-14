@@ -2,7 +2,7 @@
 
 import logging
 
-from colorama import Fore, Style
+from colorama import Fore, Style, init as colorama_init
 
 from Project import name as projectName
 
@@ -12,27 +12,23 @@ Logger = logging.getLogger(projectName)
 # Exports
 __all__ = ['log', 'logError', 'debug']
 
-# #Note: This is an workaround for https://github.com/tartley/colorama/issues/57
-RESET = '%s%s' % (Style.DIM, Fore.RESET) #pylint: disable=E1101
-RED = '%s%s' % (Style.BRIGHT, Fore.RED) #pylint: disable=E1101
+BRED = '%s%s' % (Style.BRIGHT, Fore.RED) #pylint: disable=E1101
 
 def init():
+	colorama_init(autoreset=True)
+
 	Logger.addHandler(logging.StreamHandler())
 	Logger.setLevel(logging.DEBUG)
-
-	from colorama import init as colorama_init
-	colorama_init()
 
 def log(message, color=None):
 	r"""Facilitates colored logging.
 	"""
-	Logger.info('%s%s%s' % (getattr(Fore, color, 'WHITE'), message, RESET) if color else message)
-	# print '%s%s%s' % (getattr(Fore, color, 'WHITE'), message, RESET) if color else message # #Fix: Log isn't supporting colored logging.
+	Logger.info('%s%s' % (getattr(Fore, color, 'WHITE'), message) if color else message)
 
 def logError(message):
 	r"""Logs an error.
 	"""
-	Logger.error('%s%s%s\n' % (RED, message, RESET)) #pylint: disable=W1201
+	Logger.error('%s%s\n' % (BRED, message)) #pylint: disable=W1201
 
 debug = Logger.debug
 

@@ -14,12 +14,32 @@ from win32file import CreateHardLink, RemoveDirectory, CreateSymbolicLink
 from win32api import SetFileAttributes
 from win32com.shell import shell
 from laufire.extensions import namespace
+from laufire.utils import getRandomString
 
-__all__ = ['expandGlobs', 'makeLink', 'removePath', 'relpath', 'createShortcut', 'ensureParent', 'CwdSwitch', 'ensureCleanDir', 'setAttrs']
 # State
 fsRoot = abspath('.') # Risky filesystem operations such as removePath are limited to this dir.
 
 # Helpers
+def rmtree(targetPath):
+	r"""Removes a dir tree. It can unlink junctions (even as sub-dirs), without removing their content.
+	"""
+	absPath = abspath(targetPath)
+
+	for root, dirs, Files in os.walk(absPath):
+		for file in Files:
+			unlink(pathJoin(root, file))
+
+		for dir in dirs:
+			dir = pathJoin(root, dir)
+
+			if isjunction(dir):
+				RemoveDirectory(dir)
+
+			else:
+				rmtree(dir)
+
+	rmdir(targetPath)
+
 def _removePath(targetPath):
 	if isfile(targetPath):
 		unlink(targetPath)
@@ -33,6 +53,7 @@ def _removePath(targetPath):
 	else:
 		return 1 # error
 
+# Exports
 def relpath(basePath, relation):
 	r"""Resolves a relative path of the given basePath.
 
@@ -98,6 +119,44 @@ def removePath(targetPath, requiredAncestor=fsRoot, forced=False):
 			raise Exception('"%s" is not a descendant of "%s"' % (absPath, requiredAncestor))
 
 	return _removePath(targetPath)
+
+def ensureParent(childPath):
+	r"""Ensures the parent dir of the given childPathexists.
+
+		This function is provided to ease the use of other file copying tasks.
+	"""
+	parentPath = dirname(childPath)
+
+	if not exists(parentPath):
+		makedirs(parentPath)
+
+def ensureCleanDir(dir, requiredAncestor=fsRoot):
+	r"""Ensures that the given dir is clean and available.
+	"""
+	removePath(dir, requiredAncestor)
+	makedirs(dir)
+
+def getFreeFilePath(paretnDir, length=8):
+	if exists(paretnDir):
+		while True:
+			freePath = pathJoin(paretnDir, getRandomString(length))
+
+			if not exists(freePath):
+				return freePath
+
+def getContent(filePath):
+	r"""Reads a file and returns its content.
+	"""
+	with open(filePath, 'rb') as file:
+		content = file.read()
+
+	return content
+
+def setContent(filePath, content):
+	r"""Fills the given file with the given content.
+	"""
+	with open(filePath, 'wb') as file:
+		file.write(content)
 
 def expandGlobs(rootPath, *Patterns):
 	r"""Expands a set of patterns for a given rootPath.
@@ -175,22 +234,6 @@ def createShortcut(toDocPath, fromLinkPath):
 	persistFile = shortcut.QueryInterface(pythoncom.IID_IPersistFile) #pylint: disable=E1101
 	persistFile.Save(abspath(fromLinkPath), 0)
 
-def ensureParent(childPath):
-	r"""Ensures the parent dir of the given childPathexists.
-
-		This function is provided to ease the use of other file copying tasks.
-	"""
-	parentPath = dirname(childPath)
-
-	if not exists(parentPath):
-		makedirs(parentPath)
-
-def ensureCleanDir(dir, requiredAncestor=fsRoot):
-	r"""Ensures that the given dir is clean and available.
-	"""
-	removePath(dir, requiredAncestor)
-	makedirs(dir)
-
 def setAttrs(target, *Attrs):
 	r"""Sets the given attributes to the given target.
 
@@ -229,36 +272,3 @@ def isdescendant(probableDescendant, requiredAncestor):
 		probableDescendant (str): The absolute path of the probable descendant.
 	"""
 	return normpath(probableDescendant).find(normpath(requiredAncestor + os_sep)) == 0
-
-class CwdSwitch:
-	r"""Helps with switching the CWD.
-	"""
-	def __init__(self, newCwd=None):
-		self._cwd = os.getcwd()
-
-		if newCwd:
-			os.chdir(newCwd)
-
-	def restore(self):
-		os.chdir(self._cwd)
-
-# Helpers
-def rmtree(targetPath):
-	r"""Removes a dir tree. It can unlink junctions (even as sub-dirs), without removing their content.
-	"""
-	absPath = abspath(targetPath)
-
-	for root, dirs, Files in os.walk(absPath):
-		for file in Files:
-			unlink(pathJoin(root, file))
-
-		for dir in dirs:
-			dir = pathJoin(root, dir)
-
-			if isjunction(dir):
-				RemoveDirectory(dir)
-
-			else:
-				rmtree(dir)
-
-	rmdir(targetPath)

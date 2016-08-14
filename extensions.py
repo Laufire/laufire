@@ -65,3 +65,46 @@ def walkDict(Obj, callback):
 
 		else:
 			callback(val, key, Obj)
+
+def pairs(iterable):
+	r"""Provides a generator to iterate over key, value pairs of iterables.
+	"""
+	return iterable.iteritems() if hasattr(iterable, 'iteritems') else enumerate(iterable)
+
+def resolveKey(keyParts, Dict, splitter='.'):
+	r"""Resolves a nested key from a dict.
+
+	Args:
+		keyParts (str / list): The key to resolve.
+		Dict (dict): The dict to look up.
+		splitter (str): Defaults to '.'.
+	"""
+	if hasattr(keyParts, 'split'): # Convert the string to a list.
+		keyParts = keyParts.split(splitter)
+
+	if not keyParts:
+		return Dict
+
+	Resolved = Dict
+
+	for item in keyParts:
+		Resolved = Resolved[item]
+
+	return Resolved
+
+class Lazy:
+	r"""A class to implement lazy initialization. The class passed during the initialization will be initialized on first access.
+	"""
+	def __init__(self, Underlying, *Args, **KWArgs):
+		self._data = Underlying, Args, KWArgs
+		self._obj = None
+
+	def __getattr__(self, name):
+		if self._obj:
+			return getattr(self._obj, name)
+
+		Underlying, Args, KWArgs = self._data
+		self._obj = Underlying(*Args, **KWArgs) #pylint: disable=W0201
+		delattr(self, '_data')
+
+		return getattr(self, name)

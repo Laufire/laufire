@@ -9,6 +9,7 @@ A wrapper around HiYaPyCo that supports:
 
 """
 from hiyapyco import HiYaPyCo, dump, odyldo
+from jinja2 import Template
 
 # #Later: Make YamlEx to inherit 'dict', so that it could support all the functionalities of a dict.
 class YamlEx:
@@ -51,6 +52,11 @@ class YamlEx:
 		r"""Returns the YAML dump.
 		"""
 		return dump(self.data, defaultFlowStyle)
+
+	def render(self, tmplStr):
+		r"""Renders the given template.
+		"""
+		return Template(tmplStr).render(self.data)
 
 	# Allow access to the underlying dictionary attrs, this also will allow access to the keys of self.data.
 	def __getattr__(self, attr):

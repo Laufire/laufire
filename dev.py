@@ -5,6 +5,7 @@ dev
 A module to help with develpment.
 """
 from laufire.flow import forgive
+from laufire.extensions import pairs
 
 def interactive(func, message):
 	r"""Helps with re-running tasks till there were no errors.
@@ -27,7 +28,7 @@ def pause(message='Paused! Press return t ocontinue ...'):
 
 # Pretty prints the given iterable (dictionary, list etc).
 def pPrint(Iterable, indent=0):
-	for key, value in (Iterable.iteritems() if hasattr(Iterable, 'iteritems') else enumerate(Iterable)):
+	for key, value in pairs(Iterable):
 		if type(value) in [list, dict]: #pylint: disable=W1504
 			pPrint(value, indent + 1)
 

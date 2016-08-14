@@ -1,6 +1,7 @@
 r"""A module to help with shell calls.
 """
 import sys
+import os
 
 from subprocess import Popen, PIPE
 from shlex import split as shlexSplit
@@ -10,6 +11,11 @@ from laufire.logger import debug
 # State
 split = None
 
+# Helpers
+def getNthLine(string, N):
+	return string.strip().split('\n')[N]
+
+# Exports
 def run(command, **kwargs):
 	r"""Starts a process, waits till the process completes and returns the return-code.
 
@@ -57,6 +63,33 @@ def launch(command, **kwargs):
 	debug(kwargs)
 
 	Popen(split(command), stdout=PIPE, stderr=PIPE, **kwargs)
+
+class CwdSwitch:
+	r"""Helps with switching the CWD.
+	"""
+	def __init__(self, newCwd=None):
+		self._cwd = os.getcwd()
+
+		if newCwd:
+			os.chdir(newCwd)
+
+	def restore(self):
+		os.chdir(self._cwd)
+
+def assertShell(ShellResult, errorLine=None):
+	r"""Asserts the success of a shell command.
+	"""
+	debug(ShellResult)
+
+	if ShellResult['code']:
+		errorStr = ShellResult['err'] or ShellResult['out']
+
+		if errorLine is not None:
+			errorStr = getNthLine(errorStr, errorLine)
+
+		raise Exception(errorStr)
+
+	return ShellResult['out']
 
 # Init
 def init():
