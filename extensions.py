@@ -29,47 +29,48 @@ def namespace(wrapper):
 
 		return returned
 
-def flattenDict(d):
-	r"""Returns a flattened list from the values of a dictionary.(from: http://stackoverflow.com/questions/13490963/how-to-flatten-a-nested-dictionary-in-python-2-7x)
+def pairs(Iterable):
+	r"""Provides a generator to iterate over key, value pairs of iterables.
+	"""
+	return Iterable.iteritems() if hasattr(Iterable, 'iteritems') else enumerate(Iterable)
+
+def values(Iterable):
+	r"""Provides a generator to iterate over key, value pairs of iterables.
+	"""
+	return Iterable.values() if hasattr(Iterable, 'values') else Iterable
+
+def isIterable(value):
+	return hasattr(value, 'iteritems') or hasattr(value, 'next')
+
+def flatten(Iterable):
+	r"""Collects all the values from the given iterable.
+
+	#From: http://stackoverflow.com/questions/13490963/how-to-flatten-a-nested-dictionary-in-python-2-7x
 	"""
 	l = []
 
-	for v in d.values():
-		if isinstance(v, dict):
-			for item in flattenDict(v):
+	for v in values(Iterable):
+		if isIterable(v):
+			for item in flatten(v):
 				l += item
 		else:
 			l += v
 
 	return l
 
-def flattenList(inList):
-	r"""Returns a flattened copy of a nested list.
-	"""
-	l = []
+def walk(Iterable, Route=None):
+	if Route is None:
+		Route = [None]
 
-	for item in inList:
-		if isinstance(item, list):
-			for child in flattenList(item):
-				l.append(child)
+	for key, val in pairs(Iterable):
+		Route[-1 if Route else 0] = key
 
-		else:
-			l.append(item)
-
-	return l
-
-def walkDict(Obj, callback):
-	for key, val in Obj.iteritems():
-		if isinstance(val, dict):
-			walkDict(val, callback)
+		if isIterable(val):
+			for Route, val in walk(val, [key]):
+				yield [key] + Route, val
 
 		else:
-			callback(val, key, Obj)
-
-def pairs(iterable):
-	r"""Provides a generator to iterate over key, value pairs of iterables.
-	"""
-	return iterable.iteritems() if hasattr(iterable, 'iteritems') else enumerate(iterable)
+			yield Route, val
 
 def resolveKey(keyParts, Dict, splitter='.'):
 	r"""Resolves a nested key from a dict.

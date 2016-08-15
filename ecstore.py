@@ -1,7 +1,12 @@
+r"""A module to help with stroring validated data.
+"""
 import re
+import json
+
 from collections import OrderedDict
 
 from ec.utils import get
+from laufire.sqlitex import SQLiteDB, SQLiteSimpleTable
 
 # State
 State = []
@@ -55,12 +60,39 @@ def flatten(Dict, prefix, Buffer):
 		else:
 			Buffer[route] = Value
 
+def getStore(Config):
+	filePath = Config['filePath']
+	tableName = Config['tableName']
+
+	DB = SQLiteDB(Config['filePath'])
+	DB.execute("CREATE TABLE IF NOT EXISTS %s (`key` TEXT PRIMARY KEY, value TEXT)" % tableName)
+	DB.close()
+
+	return SQLiteSimpleTable(filePath, tableName, 'key')
+
+def getLeaf(route):
+	return route[route.rfind('/') + 1:]
+
 # Classes
 class Store:
-	def __init__(self, Members, Order):
-		self._Values = {}
+	def __init__(self, Members, Order, Config):
 		self._Members = Members
 		self._Order = Order
+
+		if not 'tableName' in Config:
+			Config['tableName'] = 'ecstore'
+
+		self._Store = Store = getStore(Config)
+
+		self._Values = Values = {}
+		loads = json.loads
+
+		for key, value in Store.getCol('value').iteritems():
+			if key in Members:
+				Values[key] = loads(value)
+
+			else:
+				Store.delete(key) # Remove from the DB, the keys, which are not in the Config.
 
 	def var(self, route, value=None):
 		Member = self._Members[route]
@@ -80,26 +112,35 @@ class Store:
 
 		if 'hook' in Member:
 			ret = Member['hook'](value)
-			if ret is not None:
+			if ret is not None: # Hooks can manipulate the passed values and return them to be stored.
 				value = ret
 
+		self._Store.set({'key': route, 'value': json.dumps(value)})
 		self._Values[route] = value
 
-	def setup(self):
+	def setup(self, overwrite=False):
 		for key in self._Order:
-			self.get(key)
+			if overwrite or key not in self._Values:
+				self.get(key, overwrite)
 
-	def get(self, route):
+			else:
+				print '%s: %s' % (key, self._Values[key])
+
+	def get(self, route, overwrite=False):
 		Member = self._Members[route]
 		Order = Member.get('Order')
 
 		if Order is not None:
 			print '\n%s:' % Member['name']
 			for key in Order:
-				self.get(key)
+				self.get(key, overwrite)
 
 		else:
-			get(**Member)
+			if overwrite or route not in self._Values:
+				self._Store.set({'key': route, 'value': json.dumps(get(**Member))})
+
+			else:
+				print '%s: %s' % (getLeaf(route), self._Values[route])
 
 	def dump(self, Member=None):
 		Order = Member['Order'] if Member else self._Order
@@ -114,13 +155,16 @@ class Store:
 				print '%s: %s' % (re.sub(keyPartPattern, '\t', key), self._Values.get(key))
 
 # Decorators
-def root(Cls):
+def root(Cls=None, **Config):
+	if not Cls: # The decorator has some config.
+		return lambda Cls: root(Cls, **Config)
+
 	Collected = collectChildren(Cls)
 	Buffer = {}
 
 	flatten(Collected, '', Buffer)
 
-	return Store(Buffer, Collected.keys())
+	return Store(Buffer, Collected.keys(), Config)
 
 def var(hook=None, **Config):
 	if hook:

@@ -51,3 +51,5 @@ Log
 * 160815
 
 	* 1040	Added ecstore.
+	* 1800	Added a few methods to sqlitex.SQLiteSimpleTable, so to be used by ecstore.
+	* 1920	Improved ecstore to be a replacement for the existing setting management.

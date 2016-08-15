@@ -81,14 +81,37 @@ class SQLiteSimpleTable(SQLiteDB):
 			raise Exception('No primary key found for the table %s, in the DB: %s' % (tableName, filePath))
 
 		self._key = key
-		self._getStmt = "SELECT * FROM `%s` WHERE `%s`=?" % (tableName, key)
-		self._delStmt = "DELETE FROM `%s` WHERE `%s`=?" % (tableName, key)
-		self._upStmtTpl = "UPDATE OR IGNORE %s SET %%s WHERE `%s`=:%s;" % (tableName, key, key)
-		self._inStmtTpl = "INSERT OR IGNORE INTO %s (%%s) VALUES (%%s);" % tableName
+		self._Statements = {
+
+			'get': "SELECT * FROM `%s` WHERE `%s`=?;" % (tableName, key),
+			'getColTpl': "SELECT %s, `%%s` FROM `%s`;" % (key, tableName),
+			'getAll': "SELECT * FROM `%s`;" % tableName,
+			'del': "DELETE FROM `%s` WHERE `%s`=?;" % (tableName, key),
+			'update': "UPDATE OR IGNORE %s SET %%s WHERE `%s`=:%s;" % (tableName, key, key),
+			'insert': "INSERT OR IGNORE INTO %s (%%s) VALUES (%%s);" % tableName,
+		}
 
 	def get(self, key):
-		self.execute(self._getStmt, [key])
+		self.execute(self._Statements['get'], [key])
 		return self.fetchone() or {}
+
+	def getCol(self, colName):
+		Ret = {}
+		keyCol = self._key
+
+		for Item in self.execute(self._Statements['getColTpl'] % colName).fetchall():
+			Ret[Item[keyCol]] = Item[colName]
+
+		return Ret
+
+	def getAll(self):
+		Ret = {}
+		keyCol = self._key
+
+		for Item in self.execute(self._Statements['getAll']).fetchall():
+			Ret[Item[keyCol]] = Item
+
+		return Ret
 
 	def set(self, Values, dontInsert=False):
 		# #From: http://stackoverflow.com/questions/14108162/python-sqlite3-insert-into-table-valuedictionary-goes-here
@@ -99,15 +122,15 @@ class SQLiteSimpleTable(SQLiteDB):
 		columns = '`%s`' % '`,`'.join(Keys)
 		placeholders = ':'+',:'.join(Keys)
 
-		self.execute(self._upStmtTpl % updateStr, Values)
+		self.execute(self._Statements['update'] % updateStr, Values)
 
 		if not dontInsert:
-			self.execute(self._inStmtTpl % (columns, placeholders), Values)
+			self.execute(self._Statements['insert'] % (columns, placeholders), Values)
 
 		self.commit()
 
 	def delete(self, key):
-		self.execute(self._delStmt, [key])
+		self.execute(self._Statements['del'], [key])
 		self.commit()
 
 def importTables(toDBPath, fromDBPath, TableNames):
