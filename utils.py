@@ -1,42 +1,30 @@
 r"""Utilities
 """
-from laufire.extensions import namespace
-
-@namespace
-def getMD5(): # #From: http://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
+def getMD5(filePath): # #From: http://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
+	r"""Returns the MD5 digest of the given file.
+	"""
 	import hashlib
 
-	def worker(filePath): # #From: http://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
-		hashMD5 = hashlib.md5()
+	hashMD5 = hashlib.md5()
 
-		with open(filePath, 'rb') as file:
-			for chunk in iter(lambda: file.read(4096), b''): # Read the file as small chunks to avoid buffer overruns.
-				hashMD5.update(chunk)
+	with open(filePath, 'rb') as file:
+		for chunk in iter(lambda: file.read(4096), b''): # Read the file as small chunks to avoid buffer overruns.
+			hashMD5.update(chunk)
 
-		return hashMD5.hexdigest()
+	return hashMD5.hexdigest()
 
-	return worker
-
-@namespace
-def getTimeString():
+def getTimeString(useLocal=False):
+	r"""Returns the current time as a path friendly string.
+	"""
 	import time
 
-	def worker(useLocal=False):
-		r"""Returns the current time as a path friendly string.
-		"""
-		return time.strftime('%y%m%d%H%M%S', (time.localtime if useLocal else time.gmtime)(time.time()))
+	return time.strftime('%y%m%d%H%M%S', (time.localtime if useLocal else time.gmtime)(time.time()))
 
-	return worker
-
-@namespace
-def getRandomString():
+def getRandomString(length=8):
 	import random
 	import string
 
-	def worker(length=8):
-		return ''.join(random.choice(string.ascii_uppercase) for _ in range(length))
-
-	return worker
+	return ''.join(random.choice(string.ascii_uppercase) for _ in range(length))
 
 def getFreeName(iterable):
 	r"""Gets a free name for the given iterable.

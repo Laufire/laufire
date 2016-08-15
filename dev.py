@@ -29,7 +29,8 @@ def pause(message='Paused! Press return t ocontinue ...'):
 # Pretty prints the given iterable (dictionary, list etc).
 def pPrint(Iterable, indent=0):
 	for key, value in pairs(Iterable):
-		if type(value) in [list, dict]: #pylint: disable=W1504
+		if hasattr(value, 'iteritems') or hasattr(value, 'next'): #pylint: disable=W1504
+			print '%s%s:' % ('\t' * indent, key)
 			pPrint(value, indent + 1)
 
 		else:

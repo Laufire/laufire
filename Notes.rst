@@ -23,6 +23,8 @@ Modules
 
 * **yamlex.py** - helps with handling yaml-s.
 
+* **ecstore** - provide persistent storage facilities.
+
 ToDo
 ----
 
@@ -41,3 +43,11 @@ Log
 	* 1800	Added the module logger.
 	* 1800	Introduced two new modules, dev and flow.
 	* 2310	Added all the standalone modules.
+
+* 160814
+
+	* 0600	Added more calls and restructured several modules.
+
+* 160815
+
+	* 1040	Added ecstore.
