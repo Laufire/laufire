@@ -34,6 +34,7 @@ Pending
 -------
 
 * Make the package publishable.
+* Bring the venv management too.
 
 Log
 ---
@@ -53,3 +54,7 @@ Log
 	* 1040	Added ecstore.
 	* 1800	Added a few methods to sqlitex.SQLiteSimpleTable, so to be used by ecstore.
 	* 1920	Improved ecstore to be a replacement for the existing setting management.
+
+* 160816
+
+	* 0122	Added initializer.
