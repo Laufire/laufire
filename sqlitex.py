@@ -133,6 +133,9 @@ class SQLiteSimpleTable(SQLiteDB):
 		self.execute(self._Statements['del'], [key])
 		self.commit()
 
+	def reopen(self):
+		self.__init__(self.path, self.tableName, self._key)
+
 def importTables(toDBPath, fromDBPath, TableNames):
 	TargetDB = SQLiteDB(toDBPath)
 	TargetDB.execute('ATTACH ? as patch', [fromDBPath])

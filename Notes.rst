@@ -28,12 +28,12 @@ Modules
 ToDo
 ----
 
-* Add all possible modules.
+* **None, yet.**
 
 Pending
 -------
 
-* Make the package as publishable.
+* Make the package publishable.
 
 Log
 ---

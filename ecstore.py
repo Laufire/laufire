@@ -1,10 +1,13 @@
 r"""A module to help with stroring validated data.
+
+#Later: Branch level hooks that are to be called when any of its Children are changed.
 """
 import re
 import json
 
 from collections import OrderedDict
 
+from ec.ec import exit_hook
 from ec.utils import get
 from laufire.sqlitex import SQLiteDB, SQLiteSimpleTable
 
@@ -77,7 +80,8 @@ def getLeaf(route):
 class Store:
 	def __init__(self, Members, Order, Config):
 		self._Members = Members
-		self._Order = Order
+
+		Members[''] = {'Order': Order} # Add the root member.
 
 		if not 'tableName' in Config:
 			Config['tableName'] = 'ecstore'
@@ -94,14 +98,16 @@ class Store:
 			else:
 				Store.delete(key) # Remove from the DB, the keys, which are not in the Config.
 
-	def var(self, route, value=None):
-		Member = self._Members[route]
+			exit_hook(self.close)
 
+	def var(self, route, value=None):
 		if value is None:
+			Member = self._Members[route]
+
 			if 'Order' in Member:
 				Ret = {}
 				for i in Member['Order']:
-					Ret[i] = self.var(i)
+					Ret[getLeaf(i)] = self.var(i)
 
 				return Ret
 
@@ -119,12 +125,12 @@ class Store:
 		self._Values[route] = value
 
 	def setup(self, overwrite=False):
-		for key in self._Order:
-			if overwrite or key not in self._Values:
-				self.get(key, overwrite)
+		for route in self._Members['']['Order']:
+			if overwrite or route not in self._Values:
+				self.get(route, overwrite)
 
 			else:
-				print '%s: %s' % (key, self._Values[key])
+				print '%s: %s' % (route, self._Values[route])
 
 	def get(self, route, overwrite=False):
 		Member = self._Members[route]
@@ -132,8 +138,8 @@ class Store:
 
 		if Order is not None:
 			print '\n%s:' % Member['name']
-			for key in Order:
-				self.get(key, overwrite)
+			for route in Order:
+				self.get(route, overwrite)
 
 		else:
 			if overwrite or route not in self._Values:
@@ -142,17 +148,23 @@ class Store:
 			else:
 				print '%s: %s' % (getLeaf(route), self._Values[route])
 
-	def dump(self, Member=None):
-		Order = Member['Order'] if Member else self._Order
+	def dump(self, route=''):
+		Order = self._Members[route]['Order']
 
-		for key in Order:
-			Member = self._Members[key]
+		for route in Order:
+			Member = self._Members[route]
 			if 'Order' in Member:
-				print '\n%s:' % re.sub(keyPartPattern, '\t', key)
-				self.dump(Member)
+				print '\n%s:' % re.sub(keyPartPattern, '\t', route)
+				self.dump(route)
 
 			else:
-				print '%s: %s' % (re.sub(keyPartPattern, '\t', key), self._Values.get(key))
+				print '%s: %s' % (re.sub(keyPartPattern, '\t', route), self._Values.get(route))
+
+	def close(self):
+		self._Store.close()
+
+	def reopen(self):
+		self._Store.reopen()
 
 # Decorators
 def root(Cls=None, **Config):
