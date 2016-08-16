@@ -1,4 +1,6 @@
 r"""A helper for SSH operations.
+
+#Note: This module needs the SSHConfig to be in Project.Config['SSH']
 """
 import json
 
@@ -7,18 +9,15 @@ from re import compile, sub
 
 import paramiko
 from laufire.extensions import Lazy
-from laufire.filesys import copy
 from laufire.logger import debug
-from laufire.shell import call, debugCall, assertShell
+from laufire.shell import assertShell
 from laufire.yamlex import YamlEx
 
-from Project import Config
+from Project import Config, gatewayConfigPath
 
 # Data
 homeDirPatern = compile(r'^~/')
-GatewayConfig = YamlEx('remote/gateway/config.yaml', loglevel='ERROR').interpolate()
-mockTempDir = 'remote/%s' % GatewayConfig['tempDir'].replace('~/', '')
-mockScriptTpl = r'venv/python/Scripts/python.exe %s/remote/gateway/scripts/%%s' % Config['ops'].replace('\\', '/')
+GatewayConfig = YamlEx(gatewayConfigPath, loglevel='ERROR').interpolate()
 
 # Helpers
 def expandPath(path, homeDir):
@@ -62,8 +61,8 @@ class SSHClient:
 class SSHBridge:
 	r"""An abstraction layer over the SSH client.
 	"""
-	def __init__(self):
-		self._ = SSHClient(Config['SSH'])
+	def __init__(self, SSHConfig):
+		self._ = SSHClient(SSHConfig)
 
 	def execute(self, command):
 		return self._.execute(command)
@@ -80,23 +79,5 @@ class SSHBridge:
 	def upload(self, srcPath, tgtPath=''): # #Note: Uploads are done always to the temp dir.
 		return self._.upload(srcPath, '%s/%s' % (GatewayConfig['tempDir'], getTgtPath(tgtPath, srcPath)))
 
-class SSHBridgeMocker:
-	r"""A class to help with the dvelopment of gateway scripts, by passing the commands to them instead of their remote peers.
-	"""
-	def callScript(self, ecCommand):
-		out = assertShell(call(mockScriptTpl % ecCommand))
-		debug(out)
-		return json.loads(out) if out else None
-
-	def debugScript(self, ecCommand):
-		r"""Helps with debugging the gateway scripts.
-		"""
-		debugCall(mockScriptTpl % ecCommand)
-
-	def upload(self, srcPath, tgtPath=''): # #Note: Uploads are done always to the temp dir.
-		return copy(srcPath, '%s/%s' % (mockTempDir, getTgtPath(tgtPath, srcPath)))
-
 # Delegates
-Gateway = Lazy(SSHBridge) # #Note: SSHBridge is initialized as lazy class, as parmiko cannot connect to the server when modules are being loaded, dur to some internals of threading.
-
-# Gateway = SSHBridgeMocker() #DevComment: #Note: Uncomment this line to use the local gateway scripts, instead of the remote ones, so to aid development.
+Gateway = Lazy(SSHBridge, Config['SSH']) # #Note: SSHBridge is initialized as lazy class, as parmiko cannot connect to the server when modules are being loaded, dur to some internals of threading.

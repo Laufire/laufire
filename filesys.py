@@ -21,7 +21,7 @@ fsRoot = abspath('.') # Risky filesystem operations such as removePath are limit
 
 # Helpers
 def rmtree(targetPath):
-	r"""Removes a dir tree. It can unlink junctions (even as sub-dirs), without removing their content.
+	r"""Removes a dir tree. It can unlink junctions (even as sub-dirs), without removing the descendant files.
 	"""
 	absPath = abspath(targetPath)
 

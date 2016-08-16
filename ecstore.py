@@ -101,9 +101,9 @@ class Store:
 			exit_hook(self.close)
 
 	def var(self, route, value=None):
-		if value is None:
-			Member = self._Members[route]
+		Member = self._Members[route]
 
+		if value is None:
 			if 'Order' in Member:
 				Ret = {}
 				for i in Member['Order']:

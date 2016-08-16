@@ -91,6 +91,12 @@ def assertShell(ShellResult, errorLine=None):
 
 	return ShellResult['out']
 
+def extendEnv(**Extensions):
+	Env = dict(**os.environ)
+	Env.update(Extensions)
+
+	return Env
+
 # Init
 def init():
 	global split

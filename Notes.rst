@@ -8,9 +8,9 @@ Idea
 
 * The idea is to have a sharable, utility module across the projects to save on development and debugging time.
 
-
 Modules
 -------
+
 * **extensions.py** - provides generic low level functions to assist development.
 
 * **filesys.py** - helps with handling the filesystem tasks.
@@ -58,3 +58,5 @@ Log
 * 160816
 
 	* 0122	Added initializer.
+	* 1655	Introduced laufire.mock, a package to help with mocking, so to ease development.
+	* 1655	Extracted ssh.SSHBridgeMocker as a separate package, mock.ssh.
