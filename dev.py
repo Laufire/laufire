@@ -3,6 +3,8 @@ dev
 ---
 
 A module to help with develpment.
+
+#Later: Think of adding some functions, like scan, to the built-ins, so that there can be used without importing.
 """
 from laufire.flow import forgive
 from laufire.extensions import pairs
@@ -25,6 +27,16 @@ def interactive(func, message):
 
 def pause(message='Paused! Press return t ocontinue ...'):
 	raw_input(message)
+
+def peek(val):
+	print val
+	return val
+
+def details(Obj):
+	for attr in [attr for attr in dir(Obj) if attr[0] != '_']:
+		print '%s: %s' % (attr, getattr(Obj, attr))
+
+	return Obj
 
 # Pretty prints the given iterable (dictionary, list etc).
 def pPrint(Iterable, indent=0):

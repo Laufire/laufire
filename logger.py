@@ -1,12 +1,10 @@
-# #ToDo: Fix colored logging.
-
 import logging
 
 from colorama import Fore, Style, init as colorama_init
 
 from Project import name as projectName
 
-# State
+# Delegates
 Logger = logging.getLogger(projectName)
 
 # Exports

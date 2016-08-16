@@ -8,9 +8,9 @@ from time import sleep
 
 from laufire.logger import debug
 
-from Project import Config
+from Project import delay
 
-defaultDelay = Config['delay'] / 2.0 # Get a float value.
+defaultDelay = delay / 1.0 # Get a float value.
 tickTime = defaultDelay / 10
 
 def waitFor(func, maxWait=defaultDelay):
@@ -33,6 +33,15 @@ def forgive(func):
 
 	except Exception as e: #pylint: disable=W0703
 		return e
+
+def rob(func):
+	r"""Tries to get the result from a given function, and returns none if there were a error.
+	"""
+	try:
+		return func()
+
+	except: #pylint: disable=W0702
+		return
 
 def retry(func, repeat=3, delay=tickTime * 2):
 	while repeat:

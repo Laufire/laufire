@@ -7,6 +7,9 @@ initializer
 """
 from laufire.yamlex import YamlEx
 
+# State
+Project = None
+
 # Helpers
 def getAttrDict(Obj, *Attrs):
 	Ret = {}
@@ -45,11 +48,37 @@ def silenceLoggers(Attrs):
 	for name in LoggerNames:
 		logging.getLogger(name).setLevel('ERROR') # only log really bad events
 
+def addDefaults():
+	# Load the project with default values for the essential attributes.
+	from laufire.setup import Defaults
+
+	for key, value in Defaults.iteritems():
+		if not hasattr(Project, key):
+			setattr(Project, key, value)
+
+def addDevBuiltins():
+	if not Project.devMode:
+		return
+
+	from laufire import dev
+	import __builtin__
+
+	for attr in ['pPrint', 'peek', 'details']:
+		setattr(__builtin__, attr, getattr(dev, attr))
+
 # Main
 def init():
-	import Project
+	import Project as _Project
+
+	global Project
+	Project = _Project
 
 	Attrs = getAttrDict(Project, 'configPath', 'ConfigExtensions', 'Store', 'LoggersToSilence')
 
-	silenceLoggers(Attrs)
+	silenceLoggers(Attrs) # #Later: Think of silencing every other log, than that of the project or those that are excluded.
+
 	Project.Config = collectConfigData(Attrs)
+
+	addDefaults()
+
+	addDevBuiltins()

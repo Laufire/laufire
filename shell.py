@@ -67,14 +67,15 @@ def launch(command, **kwargs):
 class CwdSwitch:
 	r"""Helps with switching the CWD.
 	"""
-	def __init__(self, newCwd=None):
-		self._cwd = os.getcwd()
+	def __init__(self, baseDir=None):
+		self.cwd = baseDir or os.getcwd()
 
-		if newCwd:
-			os.chdir(newCwd)
+	def switch(self, newCwd):
+		os.chdir(newCwd)
 
 	def restore(self):
-		os.chdir(self._cwd)
+		os.chdir(self.cwd)
+
 
 def assertShell(ShellResult, errorLine=None):
 	r"""Asserts the success of a shell command.

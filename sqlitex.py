@@ -29,6 +29,9 @@ class SQLiteDB:
 
 		self._cur = self._conn.cursor()
 
+	def __del__(self):
+		self.close()
+
 	def close(self):
 		r"""Close the DB.
 

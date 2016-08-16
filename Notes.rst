@@ -60,3 +60,10 @@ Log
 	* 0122	Added initializer.
 	* 1655	Introduced laufire.mock, a package to help with mocking, so to ease development.
 	* 1655	Extracted ssh.SSHBridgeMocker as a separate package, mock.ssh.
+	* 1930	Added setup.py.
+	* 2040	Tuned the modules to be more sharable.
+	* 2150	Added Project.devMode, which prepares the project for development, by adding a few functions from laufire.dev, as built-ins.
+
+* 160817
+
+	* 0100	Improved laufire.ssh.

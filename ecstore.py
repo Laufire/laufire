@@ -7,7 +7,6 @@ import json
 
 from collections import OrderedDict
 
-from ec.ec import exit_hook
 from ec.utils import get
 from laufire.sqlitex import SQLiteDB, SQLiteSimpleTable
 
@@ -65,7 +64,7 @@ def flatten(Dict, prefix, Buffer):
 
 def getStore(Config):
 	filePath = Config['filePath']
-	tableName = Config['tableName']
+	tableName = Config.get('tableName', 'ecstore')
 
 	DB = SQLiteDB(Config['filePath'])
 	DB.execute("CREATE TABLE IF NOT EXISTS %s (`key` TEXT PRIMARY KEY, value TEXT)" % tableName)
@@ -83,22 +82,21 @@ class Store:
 
 		Members[''] = {'Order': Order} # Add the root member.
 
-		if not 'tableName' in Config:
-			Config['tableName'] = 'ecstore'
-
 		self._Store = Store = getStore(Config)
 
 		self._Values = Values = {}
 		loads = json.loads
+		shared = Config.get('shared', True)
 
 		for key, value in Store.getCol('value').iteritems():
 			if key in Members:
 				Values[key] = loads(value)
 
-			else:
+			elif not shared:
 				Store.delete(key) # Remove from the DB, the keys, which are not in the Config.
 
-			exit_hook(self.close)
+	def __del__(self):
+		self.close()
 
 	def var(self, route, value=None):
 		Member = self._Members[route]
@@ -160,6 +158,15 @@ class Store:
 			else:
 				print '%s: %s' % (re.sub(keyPartPattern, '\t', route), self._Values.get(route))
 
+	def clean(self):
+		r"""Cleans the store of unconfigured keys.
+		"""
+		Members = self._Members
+
+		for key in self._Store.getCol('key').keys():
+			if key in Members:
+				Store.delete(key)
+
 	def close(self):
 		self._Store.close()
 
@@ -168,6 +175,12 @@ class Store:
 
 # Decorators
 def root(Cls=None, **Config):
+	r"""
+	KWArgs:
+		filePath: The path to the store.
+		tableName (str): The table name of the store, defaults to ecstore.
+		shared (bool): Skips cleaning the DB of unconfigured keys, defaults to True.
+	"""
 	if not Cls: # The decorator has some config.
 		return lambda Cls: root(Cls, **Config)
 

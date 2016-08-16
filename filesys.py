@@ -32,7 +32,7 @@ def rmtree(targetPath):
 		for dir in dirs:
 			dir = pathJoin(root, dir)
 
-			if isjunction(dir):
+			if isJunction(dir):
 				RemoveDirectory(dir)
 
 			else:
@@ -44,7 +44,7 @@ def _removePath(targetPath):
 	if isfile(targetPath):
 		unlink(targetPath)
 
-	elif isjunction(targetPath):
+	elif isJunction(targetPath):
 		RemoveDirectory(targetPath)
 
 	elif isdir(targetPath):
@@ -72,7 +72,7 @@ def copy(sourcePath, targetPath):
 	if isfile(sourcePath):
 		_copy(sourcePath, targetPath)
 
-	elif isdir(sourcePath):
+	elif isContainer(sourcePath):
 		_removePath(targetPath)
 		copytree(sourcePath, targetPath)
 
@@ -92,7 +92,7 @@ def makeLink(sourcePath, targetPath):
 		CreateHardLink(targetPath, sourcePath)
 
 	elif isdir(sourcePath):
-		if isjunction(targetPath):
+		if isJunction(targetPath):
 			RemoveDirectory(targetPath)
 
 		elif isdir(targetPath):
@@ -112,11 +112,11 @@ def removePath(targetPath, requiredAncestor=fsRoot, forced=False):
 		forced (bool): When set to true, an ancestor won't be required.
 	"""
 	if not forced:
-		absPath = abspath(targetPath)
+		targetPath = abspath(targetPath)
 		requiredAncestor = abspath(requiredAncestor)
 
-		if not isdescendant(absPath, requiredAncestor):
-			raise Exception('"%s" is not a descendant of "%s"' % (absPath, requiredAncestor))
+		if not isDescendant(targetPath, requiredAncestor):
+			raise Exception('"%s" is not a descendant of "%s"' % (targetPath, requiredAncestor))
 
 	return _removePath(targetPath)
 
@@ -248,7 +248,7 @@ def setAttrs(target, *Attrs):
 	SetFileAttributes(target, attr)
 
 @namespace
-def isjunction():
+def isJunction():
 	r"""Detects whether the given path is a NTFS junction.
 	"""
 	# #From: http://stackoverflow.com/questions/1447575/symlinks-on-windows
@@ -264,7 +264,7 @@ def isjunction():
 
 	return worker
 
-def isdescendant(probableDescendant, requiredAncestor):
+def isDescendant(probableDescendant, requiredAncestor):
 	r"""Checks whether the given path is a descendant of another.
 
 	Args:
@@ -272,3 +272,17 @@ def isdescendant(probableDescendant, requiredAncestor):
 		probableDescendant (str): The absolute path of the probable descendant.
 	"""
 	return normpath(probableDescendant).find(normpath(requiredAncestor + os_sep)) == 0
+
+def isContainer(path):
+	return isdir(path) or isJunction(path)
+
+def getPathType(path):
+	ret = 0
+
+	for func in [isfile, isdir, isJunction]:
+		ret += 1
+
+		if func(path):
+			break
+
+	return ret
