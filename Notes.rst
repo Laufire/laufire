@@ -28,7 +28,7 @@ Modules
 ToDo
 ----
 
-* **None, yet.**
+* Add Ops.
 
 Pending
 -------
@@ -67,3 +67,7 @@ Log
 * 160817
 
 	* 0100	Improved laufire.ssh.
+	* 1915	Extracted the package as a separate repo.
+	* 2020	Restructured the dirs for further development.
+	* 2346	Finished the project structure.
+	* 2346	First deployment.

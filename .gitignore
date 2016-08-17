@@ -1,0 +1,35 @@
+
+# General ignores
+.*
+*.exe
+*.msi
+*.py[cod]
+*.ico
+*.jpg
+*.jpeg
+*.png
+*.lnk
+*.bz2
+*.zip
+*.7z
+*.gz
+*.tar
+*.db
+*.db-journal
+*.tmp*
+
+# General Exceptions
+!.git*
+!.jshint*
+!.editorconfig
+!.pylintrc
+
+# Project specific ignores
+
+## Dev Packages
+/ops/laufire
+/ops/ec
+
+## Paths starting with an _ are considered to be working areas.
+_*
+!__init__.py

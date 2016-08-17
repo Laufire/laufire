@@ -19,8 +19,11 @@ class YamlEx:
 		*FilePaths: A list of YAML files to load.
 	"""
 	def __init__(self, *FilePaths, **KWArgs):
-		self.HiYaPyCo = HiYaPyCo(*FilePaths, **KWArgs) if FilePaths else HiYaPyCo('---\n', **KWArgs) # return an empty object when no file is mentioned.
-		self.data = self.HiYaPyCo._data	#pylint: disable=W0212
+		if FilePaths and FilePaths[0] is None: # None is supplied for the file path.
+			FilePaths = None
+
+		self.HiYaPyCo = H = HiYaPyCo(*FilePaths, **KWArgs) if FilePaths else HiYaPyCo('---\n{}', **KWArgs) # return an empty object when no file is mentioned.
+		self.data = H._data #pylint: disable=W0212
 
 	def setData(self, data):
 		r"""Explicitly sets self.data.

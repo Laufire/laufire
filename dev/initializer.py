@@ -23,15 +23,17 @@ def getAttrDict(Obj, *Attrs):
 def collectConfigData(Attrs):
 	r"""Collects the config from various sources and builds the Config.
 	"""
-	Config = YamlEx(Attrs['configPath'], loglevel='ERROR')
+	configPath = Attrs.get('configPath')
+
+	Config = YamlEx(configPath, loglevel='ERROR') if configPath else YamlEx(loglevel='ERROR')
 
 	if 'ConfigExtensions' in Attrs:
 		Config.update(Attrs['ConfigExtensions'])
 
-	Config.interpolate()
-
 	if 'Store' in Attrs:
 		Config.update(Attrs['Store'].var(''))
+
+	Config.interpolate()
 
 	return Config
 
@@ -44,7 +46,7 @@ def silenceLoggers(Attrs):
 		return
 
 	import logging
-
+	
 	for name in LoggerNames:
 		logging.getLogger(name).setLevel('ERROR') # only log really bad events
 
@@ -68,6 +70,10 @@ def addDevBuiltins():
 
 # Main
 def init():
+	r"""Initializes the project.
+
+	# #Note: The Project file has to be in the path for proper initialization.
+	"""
 	import Project as _Project
 
 	global Project
