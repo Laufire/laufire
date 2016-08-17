@@ -27,6 +27,8 @@ class SSHBridgeMocker:
 		debugCall(mockScriptTpl % ecCommand)
 
 	def upload(self, srcPath, tgtPath=''): # #Note: Uploads are done always to the temp dir.
-		return copy(srcPath, '%s/%s' % (mockTempDir, getTgtPath(tgtPath, srcPath)))
+		tgtPath = '%s/%s' % (mockTempDir, getTgtPath(tgtPath, srcPath))
+		ensureParent(tgtPath)
+		return copy(srcPath, tgtPath)
 
 Gateway = SSHBridgeMocker() #DevComment: #Note: Uncomment this line to use the local gateway scripts, instead of the remote ones, so to aid development.
