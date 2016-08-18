@@ -69,32 +69,43 @@ def combine(*Dicts):
 
 	return Ret
 
-def walk(Iterable, Route=None):
-	if Route is None:
-		Route = [None]
+def walk(Iterable, RouteParts=None):
+	if RouteParts is None:
+		RouteParts = [None]
 
 	for key, val in pairs(Iterable):
-		Route[-1 if Route else 0] = key
+		RouteParts[-1 if RouteParts else 0] = key
 
 		if isIterable(val):
-			for Route, val in walk(val, [key]):
-				yield [key] + Route, val
+			for RouteParts, val in walk(val, [key]):
+				yield [key] + RouteParts, val
 
 		else:
-			yield Route, val
+			yield RouteParts, val
 
-def resolveRoute(Dict, route, splitter='/'):
+def unnest(Dict, separator='/', Target=None):
+	r"""Gets a routed dictionary from a nested one.
+	"""
+	if Target is None:
+		Target = {}
+
+	for RouteParts, val in walk(Dict):
+		Target[separator.join(RouteParts)] = val
+
+	return Target
+
+def resolveRoute(Dict, route, separator='/'):
 	r"""Resolves a route from a nested dict.
 
 	Args:
 		Dict (dict): The dict to look up for the route.
 		route (str / list): The route to resolve.
-		splitter (str): Defaults to '/'.
+		separator (str): Defaults to '/'.
 	"""
 	if not route:
 		return Dict
 
-	KeyParts = route.split(splitter) if hasattr(route, 'split') else route
+	KeyParts = route.split(separator) if hasattr(route, 'split') else route
 
 	Resolved = Dict
 

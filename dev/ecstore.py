@@ -4,12 +4,15 @@ r"""A module to help with stroring validated data.
 """
 import re
 
+from os.path import exists
+
 from json import loads, dumps
 from collections import OrderedDict
 
 from ec.utils import get
 from laufire.sqlitex import SQLiteDB, SQLiteSimpleTable
-from laufire.extensions import resolveRoute, combine
+from laufire.extensions import combine
+from laufire.parser import parse as _parse
 
 # State
 State = []
@@ -48,20 +51,53 @@ def collectChildren(Obj):
 
 	return OrderedDict(Children)
 
-def flatten(Dict, prefix, Buffer):
+def getRoute(prefix, path):
+	return ('%s/%s' % (prefix, path)) if prefix else path
+
+def getParsedMembers(Dict, prefix, Buffer):
+	Members = Buffer['Members']
+	Order = []
+	Members[prefix] = {'Order': Order}
+
+	for key, value in Dict.iteritems():
+		route = getRoute(prefix, key)
+
+		if  hasattr(value, 'iteritems'):
+			getParsedMembers(value, route, Buffer)
+
+		else:
+			Order.append(route)
+			Buffer['Values'][route] = value
+
+def processCollected(Dict, prefix, Buffer):
 	for key, Value in Dict.iteritems():
 		Children = Value.get('Children', None)
 
-		route = prefix + key
+		route = getRoute(prefix, key)
 
-		if Children is not None:
+		if Children is not None: # We've got a branch
 			Config = Value['Config']
-			Buffer[route] = Config
-			Config['Order'] = ['%s/%s' % (route, key) for key in Children]
-			flatten(Children, route + '/', Buffer)
+			Buffer['Members'][route] = Config
+			Config['Order'] = [getRoute(route, k) for k in Children]
+			processCollected(Children, route, Buffer)
+
+		elif 'Parsed' in Value:
+			getParsedMembers(Value['Parsed'], route, Buffer)
+
+		else: # We've got a var
+			Buffer['Members'][route] = Value
+
+def processDict(Dict):
+	Ret = OrderedDict()
+
+	for key, value in Dict.iteritems():
+		if hasattr(value, 'iteritems'):
+			Ret[key] = processDict(value)
 
 		else:
-			Buffer[route] = Value
+			Ret[key] = value
+
+	return Ret
 
 def getStoreTable(Config):
 	filePath = Config['filePath']
@@ -91,40 +127,49 @@ class ROStore:
 			tableName (str): The table name of the store, defaults to ecstore.
 		"""
 		Store = SQLiteSimpleTable(Config['filePath'], Config.get('tableName', 'ecstore'), 'key')
-		StoreValues = Store.getCol('value')
+		self._Values = Values = {k: loads(v) for k, v in Store.getCol('value').iteritems()}
 		Store.close()
 
-		self._Values = Values = {}
+		Routes = Values.keys()
+		Routes.sort(lambda x, y: cmp(len(x), len(y)) * -1) # Sort the Routes, descending by length, so that chidren would be processed before parents, thus speeding up the process.
 
-		 # Create the nested structure
-		Routes = list(set([key[0:key.find('/')] for key in StoreValues.keys() if '/' in key])) # Get the routes to branches.
-		Routes.sort(key=len) # Sort the keys by length, so that children won't be processed before parents.
+		while Routes:
+			currentRoute = Routes.pop(0)
+			branch, leaf = split(currentRoute)
 
-		for route in Routes:
-			branch, leaf = split(route)
-			resolveRoute(Values, branch, '/')[leaf] = {}
+			if not leaf or Values.get(branch):
+				continue
 
-		# Add the values
-		for route, value in StoreValues.iteritems():
-			branch, leaf = split(route)
-			resolveRoute(Values, branch, '/')[leaf] = loads(value)
+			Values[branch] = {'Keys': [route for route in Routes if split(route)[0] == branch] + [currentRoute]}
+			Routes.append(branch)
 
 	def __getitem__(self, key):
 		return self.var(key)
 
 	def var(self, route):
-		return resolveRoute(self._Values, route, '/')
+		Value = self._Values[route]
+
+		if Value and 'Keys' in Value: # Return the values from the Children
+			Ret = {}
+			for i in Value['Keys']:
+				Ret[getLeaf(i)] = self.var(i)
+
+			return Ret
+
+		return self._Values[route]
 
 class Store:
-	def __init__(self, Members, Order, Config):
-		self._Members = Members
-		Members[''] = {'Order': Order} # Add the root member.
-
+	def __init__(self, Buffer, Config):
+		self._Members = Members = Buffer['Members']
+		self._Values = Values = Buffer['Values']
 		self._Store = Store = getStoreTable(Config)
 
-		self._Values = Values = {}
-		
-		for key, value in Store.getCol('value').iteritems():
+		StoreValues = Store.getCol('value')
+
+		for key, value in Values.iteritems(): # Write any parsed values to the DB, so that the DB could be shared without the parse source.
+			self._set(key, value)
+
+		for key, value in StoreValues.iteritems():
 			if key in Members:
 				Values[key] = loads(value)
 
@@ -135,11 +180,11 @@ class Store:
 		self.close()
 
 	def var(self, route, value=None): #pylint: disable=W0221
-		Member = self._Members[route]
+		Member = self._Members.get(route)
 
 		if value is None:
 
-			if 'Order' in Member: # Return the values from the Children
+			if Member and 'Order' in Member: # Return the values from the Children
 				Ret = {}
 				for i in Member['Order']:
 					Ret[getLeaf(i)] = self.var(i)
@@ -147,6 +192,9 @@ class Store:
 				return Ret
 
 			return self._Values[route]
+
+		elif not 'name' in Member: # We've got an updatable node.
+			raise Exception('Cannot set the value of parsed data.')
 
 		if 'type' in Member:
 			value = Member['type'](value)
@@ -156,8 +204,10 @@ class Store:
 			if ret is not None: # Hooks can manipulate the passed values and return them to be stored.
 				value = ret
 
-		self._Store.set({'key': route, 'value': dumps(value)}) # Set the value in the DB.
-		self._Values[route] = value # Set the value in the Cache.
+		self._set(route, value)
+
+	def __getitem__(self, key):
+		return self.var(key)
 
 	def setup(self, overwrite=False):
 		for route in self._Members['']['Order']:
@@ -170,28 +220,37 @@ class Store:
 	def get(self, route, overwrite=False):
 		Member = self._Members[route]
 		Order = Member.get('Order')
+		prefix = '  ' * route.count('/')
 
-		if Order is not None:
-			print '\n%s:' % Member['name'] # #Note" Tabs aren't used for branch identification, due the space constrains of the terminal.
-			for route in Order:
-				self.get(route, overwrite)
+		if Order:
+			name = Member.get('name')
 
-			print ''
+			if name: #  # We've got a branch
+				print '\n%s%s:' % (prefix, name) # #Note" Tabs aren't used for branch identification, due the space constrains of the terminal.
+
+				for route in Order:
+					self.get(route, overwrite)
+
+				print ''
+
+			# We've got a parsed. Hence return without doing anything.
 
 		else:
 			if route not in self._Values:
-				self._get(route, combine(Member, {'prefix': '  ' * route.count('/')}))
+				self._get(route, combine(Member, {'prefix': prefix}))
 
 			elif overwrite:
-				self._get(route, combine(Member, {'default': self._Values[route], 'prefix': '  ' * route.count('/')})) # Have the existing value as the default.
+				self._get(route, combine(Member, {'default': self._Values[route], 'prefix': prefix})) # Have the existing value as the default.
 
 			else:
 				print '%s: %s' % (getLeaf(route), self._Values[route])
 
 	def _get(self, route, Config):
-		got = dumps(get(**Config))
-		self._Values[route] = got
-		return self._Store.set({'key': route, 'value': got})
+		self._set(route, get(**Config)) # Get the input from the user and write it to the DB.
+
+	def _set(self, route, value):
+		self._Store.set({'key': route, 'value': dumps(value)}) # Set the value in the DB.
+		self._Values[route] = value # Set the value in the Cache.
 
 	def dump(self, route=''):
 		Order = self._Members[route]['Order']
@@ -213,7 +272,6 @@ class Store:
 		self._Store.reopen()
 
 # Exports
-
 ## Functions
 def getStore(**Config):
 	r"""
@@ -225,7 +283,7 @@ def getStore(**Config):
 	"""
 	return ROStore(**Config)
 
-## Decorators
+## Config Decorators
 def root(Cls=None, **Config):
 	r"""
 	Returns a Store for the branches and vars under the decorated class.
@@ -238,11 +296,13 @@ def root(Cls=None, **Config):
 		return lambda Cls: root(Cls, **Config)
 
 	Collected = collectChildren(Cls)
-	Buffer = {}
+	Members = {}
+	Buffer = {'Members': Members, 'Values': {}}
 
-	flatten(Collected, '', Buffer)
+	processCollected(Collected, '', Buffer)
+	Members[''] = {'Order': Collected.keys()} # Add the root member.
 
-	return Store(Buffer, Collected.keys(), Config)
+	return Store(Buffer, Config)
 
 def branch(Obj, **Config):
 	r"""Decorates the Classes that holds other branches and vars.
@@ -250,7 +310,7 @@ def branch(Obj, **Config):
 	State.append((getName(Obj, Config), {'Children': collectChildren(Obj), 'Config': Config}, None,))
 
 def var(hook=None, **Config):
-	r"""A decorator / function for declarinf vars.
+	r"""A decorator / function for declaring vars.
 	Properties are declared using var as a function.
 	Properties with hooks are defined with using this function as a decorator.
 
@@ -266,4 +326,23 @@ def var(hook=None, **Config):
 		ret = lambda hook, **dummy: var(hook, **State.pop()[1]) # If the lambda is called, then it would be by the passing of the hook.
 
 	State.append((name, Config, ret,))
+	return ret
+
+## Config Functions
+def parse(filePath, format=None):
+	r"""Adds parsed data to the Store.
+
+	Args:
+		Check parser.parse.
+
+	#Note: Parsed data can't be written back ans won't be available on the dumps. The idea behind the function is to making data access easier, by unifiying the configuration.
+	"""
+	if not exists(filePath):
+		raise Exception('No such file: %s' % filePath)
+
+	Data = _parse(filePath, format)
+	ret = lambda x: x # #Note: The lambda serves as an object marker for the assigned value, during child collection.
+
+	State.append((None, {'Parsed': Data}, ret,))
+
 	return ret

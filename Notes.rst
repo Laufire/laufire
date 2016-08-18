@@ -36,6 +36,13 @@ Pending
 * Make the package publishable.
 * Bring the venv management too.
 
+Later
+-----
+
+* Measure the speed of the package and improve if necessary.
+
+* Add tests.
+
 Log
 ---
 
@@ -76,3 +83,8 @@ Log
 
 	* 0243	ecstore's Stores can now be accessed like dictionaries.
 	* 0630	Introduced ecstore.getStore, to have read-only stores, that can be shared across projects.
+	* 2000	Added laufire.parser.
+	* 2010	Introduced ecstore.parse, to have parsed data from JSON and YAML files.
+	* 2130	Write proofed ecstore. The *vars* methods of various Classes, always return a copy of the underlying data.
+	* 2310	Rewrote ecstore.ROStore.__init__, to be more readable.
+	* 2340	Data from ecstore.parse are now written to the DB, so that the DB-s could be shared with other projects.

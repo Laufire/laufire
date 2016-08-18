@@ -16,7 +16,7 @@ def init():
 	colorama_init(autoreset=True)
 
 	Logger.addHandler(logging.StreamHandler())
-	Logger.setLevel(logging.DEBUG)
+	Logger.setLevel(logging.INFO)
 
 def log(message, color=None):
 	r"""Facilitates colored logging.

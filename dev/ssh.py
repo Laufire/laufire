@@ -15,13 +15,12 @@ from laufire.flow import forgive
 from laufire.filesys import getPathType
 from laufire.logger import debug
 from laufire.shell import assertShell
-from laufire.yamlex import YamlEx
 
-from Project import Config, gatewayConfigPath
+from Project import Config
 
 # Data
 homeDirPatern = compile(r'^~/')
-GatewayConfig = YamlEx(gatewayConfigPath, loglevel='ERROR').interpolate()
+GatewayConfig = Config['Gateway']
 
 # Helpers
 def expandPath(path, homeDir):

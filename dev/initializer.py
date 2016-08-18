@@ -46,7 +46,7 @@ def silenceLoggers(Attrs):
 		return
 
 	import logging
-	
+
 	for name in LoggerNames:
 		logging.getLogger(name).setLevel('ERROR') # only log really bad events
 
