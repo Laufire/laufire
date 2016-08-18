@@ -26,4 +26,10 @@ def deploy():
 	for targetParent in Config['TargetParents']:
 		makeLink(libPath, '%s/laufire' % targetParent)
 
+@task(alias='t')
+def test():
+	r"""The task under development.
+	"""
+	pass
+
 settings(debug=True)

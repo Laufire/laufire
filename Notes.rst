@@ -53,7 +53,7 @@ Log
 
 	* 1040	Added ecstore.
 	* 1800	Added a few methods to sqlitex.SQLiteSimpleTable, so to be used by ecstore.
-	* 1920	Improved ecstore to be a replacement for the existing setting management.
+	* 1920	Improved ecstore to be a replacement for the existing settings management.
 
 * 160816
 
@@ -71,3 +71,8 @@ Log
 	* 2020	Restructured the dirs for further development.
 	* 2346	Finished the project structure.
 	* 2346	First deployment.
+
+* 160818
+
+	* 0243	ecstore's Stores can now be accessed like dictionaries.
+	* 0630	Introduced ecstore.getStore, to have read-only stores, that can be shared across projects.

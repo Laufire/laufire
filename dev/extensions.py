@@ -58,6 +58,17 @@ def flatten(Iterable):
 
 	return l
 
+def combine(*Dicts):
+	r"""
+	Combines values from multiple dictionaries and returns a new dictionary. The values are overwritten by every following dictionary.
+	"""
+	Ret = {}
+
+	for Dict in Dicts:
+		Ret.update(Dict)
+
+	return Ret
+
 def walk(Iterable, Route=None):
 	if Route is None:
 		Route = [None]
@@ -72,23 +83,22 @@ def walk(Iterable, Route=None):
 		else:
 			yield Route, val
 
-def resolveKey(keyParts, Dict, splitter='.'):
-	r"""Resolves a nested key from a dict.
+def resolveRoute(Dict, route, splitter='/'):
+	r"""Resolves a route from a nested dict.
 
 	Args:
-		keyParts (str / list): The key to resolve.
-		Dict (dict): The dict to look up.
-		splitter (str): Defaults to '.'.
+		Dict (dict): The dict to look up for the route.
+		route (str / list): The route to resolve.
+		splitter (str): Defaults to '/'.
 	"""
-	if hasattr(keyParts, 'split'): # Convert the string to a list.
-		keyParts = keyParts.split(splitter)
-
-	if not keyParts:
+	if not route:
 		return Dict
+
+	KeyParts = route.split(splitter) if hasattr(route, 'split') else route
 
 	Resolved = Dict
 
-	for item in keyParts:
+	for item in KeyParts:
 		Resolved = Resolved[item]
 
 	return Resolved

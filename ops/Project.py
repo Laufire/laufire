@@ -2,13 +2,11 @@ r"""The standard project file for the support package, laufire.
 """
 #pylint: disable=W0611
 
-from os.path import abspath
-
 from laufire.initializer import init
 
 
 # Config
-name = 'IrisOps'
+name = 'laufire'
 
 from Store import Store
 
