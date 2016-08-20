@@ -109,7 +109,7 @@ def getLeaf(route):
 	return route[route.rfind('/') + 1:]
 
 # Classes
-class ROStore:
+class ReadOnlyStore:
 	def __init__(self, **Config):
 		r"""
 		Reads the values from the given Store.
@@ -152,7 +152,7 @@ class ROStore:
 
 		return self._Values[route]
 
-class Store:
+class ConfiguredStore:
 	def __init__(self, Buffer, Config):
 		self._Members = Members = Buffer['Members']
 		self._Values = Values = Buffer['Values']
@@ -171,7 +171,8 @@ class Store:
 				Store.delete(route)
 
 	def __del__(self):
-		self.close()
+		if hasattr(self, '_Store'):
+			self.close()
 
 	def var(self, route, value=None): #pylint: disable=W0221
 		Member = self._Members.get(route)
@@ -277,7 +278,7 @@ def getStore(**Config):
 		filePath (str): The path to the store.
 		tableName (str): The table name of the store, defaults to ecstore.
 	"""
-	return ROStore(**Config)
+	return ReadOnlyStore(**Config)
 
 ## Config Decorators
 def root(Cls=None, **Config):
@@ -287,6 +288,7 @@ def root(Cls=None, **Config):
 	Config:
 		filePath: The path to the store.
 		tableName (str): The table name of the store, defaults to ecstore.
+		noAutoSetup (bool): Skips the auto-setup (setting up the data, when the script is inovked directly).
 	"""
 	if not Cls: # The decorator has some config. Hence return a wrapper to process the following class.
 		return lambda Cls: root(Cls, **Config)
@@ -298,7 +300,12 @@ def root(Cls=None, **Config):
 	processCollected(Collected, '', Buffer)
 	Members[''] = {'Order': Collected.keys()} # Add the root member.
 
-	return Store(Buffer, Config)
+	Ret = ConfiguredStore(Buffer, Config)
+
+	if not Config.get('noAutoSetup') and Cls.__module__ == '__main__': # Setup the store when the Config script is started as the main script.
+		Ret.setup()
+
+	return Ret
 
 def branch(Obj, **Config):
 	r"""Decorates the Classes that holds other branches and vars.
@@ -322,6 +329,7 @@ def var(hook=None, **Config):
 		ret = lambda hook, **dummy: var(hook, **State.pop()[1]) # If the lambda is called, then it would be by the passing of the hook.
 
 	State.append((name, Config, ret,))
+
 	return ret
 
 ## Config Functions

@@ -28,13 +28,14 @@ Modules
 ToDo
 ----
 
-* Add Ops.
+* Try the package on linux.
 
 Pending
 -------
 
 * Make the package publishable.
-* Bring the venv management too.
+
+* Bring the venv management too. It's not yet brought in due to it being costly and due to not many projects needing it.
 
 Later
 -----
@@ -85,6 +86,17 @@ Log
 	* 0630	Introduced ecstore.getStore, to have read-only stores, that can be shared across projects.
 	* 2000	Added laufire.parser.
 	* 2010	Introduced ecstore.parse, to have parsed data from JSON and YAML files.
-	* 2130	Write proofed ecstore. The *vars* methods of various Classes, always return a copy of the underlying data.
+	* 2130	Write-proofed ecstore. The *var* methods of various Classes, always return a copy of the underlying data.
 	* 2310	Rewrote ecstore.ROStore.__init__, to be more readable.
 	* 2340	Data from ecstore.parse are now written to the DB, so that the DB-s could be shared with other projects.
+
+* 160819
+
+	* 0415	Added ecstore.data, to help with managing dictionaries from other sources.
+	* 0430	Added ecstore.store.
+
+* 160820
+
+	* 0600	Added helpers.filesys to make filesys cross-platform.
+	* 1830	Config files for ecstore are now directly callable. The call initiates the set of the configured store.
+	* 2055	Fixed a bug in sqlitex: There was some infinite recursion, during the GC of SQLiteDB-s which had their initialization failed.
