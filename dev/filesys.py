@@ -3,18 +3,13 @@ import fnmatch
 import re
 
 from os import unlink, rmdir, sep as os_sep, makedirs
-from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, normpath
+from os.path import isdir, isfile, islink, split as pathSplit, abspath, join as pathJoin, exists, dirname, normpath
 from glob2 import glob
 from shutil import copy as _copy, copytree
 
-import win32con
-import pythoncom
-
-from win32file import CreateHardLink, RemoveDirectory, CreateSymbolicLink
-from win32api import SetFileAttributes
-from win32com.shell import shell
-from laufire.extensions import namespace
 from laufire.utils import getRandomString
+
+from laufire.helpers.filesys import  link, symlink, rmlink, isSymlink
 
 # State
 fsRoot = abspath('.') # Risky filesystem operations such as removePath are limited to this dir.
@@ -32,8 +27,8 @@ def rmtree(targetPath):
 		for dir in dirs:
 			dir = pathJoin(root, dir)
 
-			if isJunction(dir):
-				RemoveDirectory(dir)
+			if isSymlink(dir):
+				rmlink(dir)
 
 			else:
 				rmtree(dir)
@@ -44,8 +39,8 @@ def _removePath(targetPath):
 	if isfile(targetPath):
 		unlink(targetPath)
 
-	elif isJunction(targetPath):
-		RemoveDirectory(targetPath)
+	elif isSymlink(targetPath):
+		rmlink(targetPath)
 
 	elif isdir(targetPath):
 		rmtree(targetPath)
@@ -89,16 +84,16 @@ def makeLink(sourcePath, targetPath):
 		if isfile(targetPath):
 			unlink(targetPath)
 
-		CreateHardLink(targetPath, sourcePath)
+		link(targetPath, sourcePath)
 
-	elif isdir(sourcePath):
-		if isJunction(targetPath):
-			RemoveDirectory(targetPath)
+	elif isContainer(sourcePath):
+		if islink(targetPath):
+			rmlink(targetPath)
 
 		elif isdir(targetPath):
-			rmdir(targetPath)
+			rmtree(targetPath)
 
-		CreateSymbolicLink(targetPath, sourcePath, 1)
+		symlink(targetPath, sourcePath, 1)
 
 	else:
 		raise Exception('Invalid source path: %s' % sourcePath)
@@ -221,49 +216,6 @@ def collectPaths(base, Includes=None, Excludes=None, absPaths=False, regex=False
 	else:
 		return AllDirs, AllFiles
 
-def createShortcut(toDocPath, fromLinkPath):
-	shortcut = pythoncom.CoCreateInstance(
-		shell.CLSID_ShellLink,
-		None,
-		pythoncom.CLSCTX_INPROC_SERVER, #pylint: disable=E1101
-		shell.IID_IShellLink
-		)
-
-	shortcut.SetPath(abspath(toDocPath))
-
-	persistFile = shortcut.QueryInterface(pythoncom.IID_IPersistFile) #pylint: disable=E1101
-	persistFile.Save(abspath(fromLinkPath), 0)
-
-def setAttrs(target, *Attrs):
-	r"""Sets the given attributes to the given target.
-
-	Args:
-		target  (path): The target path to set the attributes.
-		*Attrs : One or more attribute names of the `SetFileAttributes <https://msdn.microsoft.com/en-us/library/windows/desktop/aa365535(v=vs.85).aspx>`_ function without the preceeding *FILE_ATTRIBUTE_*.
-	"""
-	attr = 0
-	for item in Attrs:
-		attr = attr | getattr(win32con, 'FILE_ATTRIBUTE_%s' % item.upper())
-
-	SetFileAttributes(target, attr)
-
-@namespace
-def isJunction():
-	r"""Detects whether the given path is a NTFS junction.
-	"""
-	# #From: http://stackoverflow.com/questions/1447575/symlinks-on-windows
-	from win32file import FILE_ATTRIBUTE_DIRECTORY, GetFileAttributes
-
-	FILE_ATTRIBUTE_REPARSE_POINT = 1024
-	REPARSE_FOLDER = (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT)
-
-	def worker(fpath):
-		result = GetFileAttributes(fpath)
-
-		return result > -1 and result & REPARSE_FOLDER == REPARSE_FOLDER
-
-	return worker
-
 def isDescendant(probableDescendant, requiredAncestor):
 	r"""Checks whether the given path is a descendant of another.
 
@@ -274,12 +226,12 @@ def isDescendant(probableDescendant, requiredAncestor):
 	return normpath(probableDescendant).find(normpath(requiredAncestor + os_sep)) == 0
 
 def isContainer(path):
-	return isdir(path) or isJunction(path)
+	return isdir(path) or isSymlink(path)
 
 def getPathType(path):
 	ret = 0
 
-	for func in [isfile, isdir, isJunction]:
+	for func in [isfile, isdir, isSymlink]:
 		ret += 1
 
 		if func(path):

@@ -9,6 +9,9 @@ import platform
 
 from os.path import expanduser
 
+# Data
+platform = platform.system()
+
 def getDataFolder():
 	userPath = expanduser('~')
-	return ('%s\\AppData\\Roaming' % userPath) if platform.system() == 'Windows' else userPath
+	return userPath if  platform != 'Windows' else ('%s\\AppData\\Roaming' % userPath)

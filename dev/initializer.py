@@ -4,6 +4,7 @@ initializer
 
 	Intializes the Project and gives it the Config.
 
+#Note: A project option ensureCWD is thought, but was skipped from being added, as the Project file itself, won't be resolced if the CWD isn't right.
 """
 from laufire.yamlex import YamlEx
 
