@@ -108,6 +108,24 @@ def getBranch(route):
 def getLeaf(route):
 	return route[route.rfind('/') + 1:]
 
+def processCommand(Store):
+	import sys
+	Argv = sys.argv[1:]
+
+	if not Argv:
+		command = 'setup'
+
+	else:
+		command = Argv.pop(0)
+
+		if command not in ['setup', 'var', 'dump']:
+			raise Exception('Command "%s" is not recognized.' % command)
+
+	ret = getattr(Store, command)(*Argv)
+
+	if ret is not None:
+		print ret
+
 # Classes
 class ReadOnlyStore:
 	def __init__(self, **Config):
@@ -170,6 +188,12 @@ class ConfiguredStore:
 			else:
 				Store.delete(route)
 
+		for key, value in Values.iteritems():
+			Member = Members[key]
+
+			if 'live' in Member:
+				Member['hook'](value, 'init')
+
 	def __del__(self):
 		if hasattr(self, '_Store'):
 			self.close()
@@ -179,12 +203,19 @@ class ConfiguredStore:
 
 		if value is None:
 
-			if Member and 'Order' in Member: # Return the values from the Children
+			if Member and 'Order' in Member: # Return the values from the Children.
 				Ret = {}
 				for i in Member['Order']:
 					Ret[getLeaf(i)] = self.var(i)
 
 				return Ret
+
+			elif Member.get('live'):
+				storeValue = self._Values[route]
+
+				ret = Member['hook'](storeValue, 'get')
+
+				return storeValue if ret is None else ret
 
 			return self._Values[route]
 
@@ -195,7 +226,8 @@ class ConfiguredStore:
 			value = Member['type'](value)
 
 		if 'hook' in Member:
-			ret = Member['hook'](value)
+			ret = Member['hook'](value) if not Member.get('live') else Member['hook'](value, 'set')
+
 			if ret is not None: # Hooks can manipulate the passed values and return them to be stored.
 				value = ret
 
@@ -300,12 +332,12 @@ def root(Cls=None, **Config):
 	processCollected(Collected, '', Buffer)
 	Members[''] = {'Order': Collected.keys()} # Add the root member.
 
-	Ret = ConfiguredStore(Buffer, Config)
+	Store = ConfiguredStore(Buffer, Config)
 
 	if not Config.get('noAutoSetup') and Cls.__module__ == '__main__': # Setup the store when the Config script is started as the main script.
-		Ret.setup()
+		processCommand(Store)
 
-	return Ret
+	return Store
 
 def branch(Obj, **Config):
 	r"""Decorates the Classes that holds other branches and vars.

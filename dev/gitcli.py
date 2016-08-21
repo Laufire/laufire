@@ -31,8 +31,7 @@ def getStdout(commandStr, **kwargs):
 	return Result['out'].strip()
 
 # Exports
-
-# Low level calls
+## Low level calls
 def command(commandStr, cwd='.'):
 	r"""Executes a git command and returns its outputs.
 	"""
@@ -51,7 +50,7 @@ def lines(commandStr, cwd='.'):
 
 	return out.split('\n') if out else []
 
-# Info
+## Info
 def isClean(dir=None):
 	r"""Ensures that the given dir doesn't have any uncommited changes.
 	"""
@@ -97,8 +96,7 @@ def addTag(tagName, tgtTreeish=None):
 def deleteTag(tagName):
 	getStdout('tag -d "%s"' % tagName)
 
-# Utilities
-
+## Utilities
 def archive(archiveTarget, pathToArchive='.', treeish='HEAD'):
 	r"""Archives the pathToArchive of the given treeish, to the archiveTarget.
 	"""

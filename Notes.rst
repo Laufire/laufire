@@ -100,3 +100,14 @@ Log
 	* 0600	Added helpers.filesys to make filesys cross-platform.
 	* 1830	Config files for ecstore are now directly callable. The call initiates the set of the configured store.
 	* 2055	Fixed a bug in sqlitex: There was some infinite recursion, during the GC of SQLiteDB-s which had their initialization failed.
+
+
+* 160821
+
+	* 1030	Project.ConfigExtensions can now be nested dictionaries, they are merged with that of Config.
+
+* 160822
+
+	* 1000	Most modules doesn't import Project anymore, so now these modules can now be used without defining a Project.
+	* 1030	ecstore.var now supports: get, set and init through hooks.
+	* 1052	Store scripts could now be called, directly with ec syntax, to perform setup etc. Currently the commands setup, var and dump are supported.

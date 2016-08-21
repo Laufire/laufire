@@ -25,7 +25,7 @@ def parseJSON(filePath):
 	with open(filePath, 'r') as file:
 		return json.load(file)
 
-def parse(filePath, format):
+def parse(filePath, format=None):
 	r"""Parses data from the diven file.
 
 	Args:

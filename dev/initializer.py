@@ -6,8 +6,6 @@ initializer
 
 #Note: A project option ensureCWD is thought, but was skipped from being added, as the Project file itself, won't be resolced if the CWD isn't right.
 """
-from laufire.yamlex import YamlEx
-
 # State
 Project = None
 
@@ -24,16 +22,22 @@ def getAttrDict(Obj, *Attrs):
 def collectConfigData(Attrs):
 	r"""Collects the config from various sources and builds the Config.
 	"""
+	from laufire.extensions import merge
+	from laufire.yamlex import YamlEx
+
 	configPath = Attrs.get('configPath')
 
 	Config = YamlEx(configPath, loglevel='ERROR') if configPath else YamlEx(loglevel='ERROR')
 
+	Data = Config.data
+
 	if 'ConfigExtensions' in Attrs:
-		Config.update(Attrs['ConfigExtensions'])
+		Data = merge(Data, Attrs['ConfigExtensions'])
 
 	if 'Store' in Attrs:
-		Config.update(Attrs['Store'].var(''))
+		Data = merge(Data, Attrs['Store'].var(''))
 
+	Config.setData(Data)
 	Config.interpolate()
 
 	return Config
@@ -69,7 +73,20 @@ def addDevBuiltins():
 	for attr in ['pPrint', 'peek', 'details']:
 		setattr(__builtin__, attr, getattr(dev, attr))
 
-# Main
+def setSettings():
+	from sys import modules
+
+	for moduleName in ['flow', 'filesys', 'logger']:
+		moduleName = 'laufire.%s' % moduleName
+
+		if moduleName in modules:
+			modules[moduleName].setup(Project)
+
+def loadProjectSettings(setupCall):
+	if Project:
+		setupCall(Project)
+
+# Init
 def init():
 	r"""Initializes the project.
 
@@ -89,3 +106,5 @@ def init():
 	addDefaults()
 
 	addDevBuiltins()
+
+	setSettings()

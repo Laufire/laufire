@@ -2,21 +2,13 @@ import logging
 
 from colorama import Fore, Style, init as colorama_init
 
-from Project import name as projectName
-
 # Delegates
-Logger = logging.getLogger(projectName)
+Logger = logging.getLogger()
 
 # Exports
 __all__ = ['log', 'logError', 'debug']
 
 BRED = '%s%s' % (Style.BRIGHT, Fore.RED) #pylint: disable=E1101
-
-def init():
-	colorama_init(autoreset=True)
-
-	Logger.addHandler(logging.StreamHandler())
-	Logger.setLevel(logging.INFO)
 
 def log(message, color=None):
 	r"""Facilitates colored logging.
@@ -34,9 +26,22 @@ def setLevel(lvl):
 	r"""Sets the level of the Logger.
 
 		Args:
-			lvl	 (int): Could be one of the following integers (10, 20, 30, 40, 50). The greater the number lesser the logs.
+			lvl	 (int): Could be one of the following integers (1, 2, 3, 4, 5). The greater the number lesser the logs.
 	"""
-	Logger.setLevel(lvl)
+	Logger.setLevel(lvl * 10)
 
-# Main
+# Init
+def setup(Project):
+	Logger.name = Project.name
+	setLevel(Project.logLevel)
+
+def init():
+	colorama_init(autoreset=True)
+
+	from laufire.initializer import loadProjectSettings
+	loadProjectSettings(setup)
+
+	Logger.addHandler(logging.StreamHandler())
+	Logger.setLevel(logging.INFO)
+
 init()

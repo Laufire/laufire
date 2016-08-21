@@ -1,18 +1,27 @@
+r"""
+FileSys
+=======
+
+	A module to help with files system operations.
+
+# #Note: Path removals generally require an ancestor to be specified, so to avoid accidental deletes.
+# #Note: Unlinke removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur in creating recreatable resources).
+"""
 import os
 import fnmatch
 import re
 
 from os import unlink, rmdir, sep as os_sep, makedirs
-from os.path import isdir, isfile, islink, split as pathSplit, abspath, join as pathJoin, exists, dirname, normpath
+from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, normpath
 from glob2 import glob
 from shutil import copy as _copy, copytree
 
 from laufire.utils import getRandomString
 
-from laufire.helpers.filesys import  link, symlink, rmlink, isSymlink
+from laufire.helpers.filesys import link, symlink, rmlink, isSymlink
 
 # State
-fsRoot = abspath('.') # Risky filesystem operations such as removePath are limited to this dir.
+fsRoot = '.' # Risky filesystem operations such as removePath are limited to fsRoot.
 
 # Helpers
 def rmtree(targetPath):
@@ -87,7 +96,7 @@ def makeLink(sourcePath, targetPath):
 		link(targetPath, sourcePath)
 
 	elif isContainer(sourcePath):
-		if islink(targetPath):
+		if isSymlink(targetPath):
 			rmlink(targetPath)
 
 		elif isdir(targetPath):
@@ -98,7 +107,7 @@ def makeLink(sourcePath, targetPath):
 	else:
 		raise Exception('Invalid source path: %s' % sourcePath)
 
-def removePath(targetPath, requiredAncestor=fsRoot, forced=False):
+def removePath(targetPath, requiredAncestor=None, forced=False):
 	r"""Removes any given file / dir / junction.
 
 	Args:
@@ -108,7 +117,7 @@ def removePath(targetPath, requiredAncestor=fsRoot, forced=False):
 	"""
 	if not forced:
 		targetPath = abspath(targetPath)
-		requiredAncestor = abspath(requiredAncestor)
+		requiredAncestor = abspath(requiredAncestor or fsRoot)
 
 		if not isDescendant(targetPath, requiredAncestor):
 			raise Exception('"%s" is not a descendant of "%s"' % (targetPath, requiredAncestor))
@@ -125,7 +134,7 @@ def ensureParent(childPath):
 	if not exists(parentPath):
 		makedirs(parentPath)
 
-def ensureCleanDir(dir, requiredAncestor=fsRoot):
+def ensureCleanDir(dir, requiredAncestor=None):
 	r"""Ensures that the given dir is clean and available.
 	"""
 	removePath(dir, requiredAncestor)
@@ -238,3 +247,12 @@ def getPathType(path):
 			break
 
 	return ret
+
+# Init
+def setup(Project):
+	global fsRoot
+
+	fsRoot = Project.fsRoot
+
+from laufire.initializer import loadProjectSettings
+loadProjectSettings(setup)

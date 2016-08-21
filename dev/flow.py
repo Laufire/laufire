@@ -8,15 +8,14 @@ from time import sleep
 
 from laufire.logger import debug
 
-from Project import delay
+defaultDelay = 0
+tickTime = 0.1
 
-defaultDelay = delay / 1.0 # Get a float value.
-tickTime = defaultDelay / 10
-
-def waitFor(func, maxWait=defaultDelay):
+def waitFor(func, maxWait=None):
 	r"""Waits for the given function to return a truthy or until a set time.
 	"""
 	waited = 0
+	maxWait = maxWait or defaultDelay
 
 	while not func():
 		waited += tickTime
@@ -35,7 +34,7 @@ def forgive(func):
 		return e
 
 def rob(func):
-	r"""Tries to get the result from a given function, and returns none if there were a error.
+	r"""Tries to get the result from a given function, and returns none if there were an error.
 	"""
 	try:
 		return func()
@@ -54,3 +53,15 @@ def retry(func, repeat=3, delay=tickTime * 2):
 			return result
 
 		repeat -= 1
+
+# Init
+def setup(Project):
+	delay = Project.delay / 1.0 # Get a float value.
+
+	global defaultDelay, tickTime
+
+	defaultDelay = delay
+	tickTime = defaultDelay / 10
+
+from laufire.initializer import loadProjectSettings
+loadProjectSettings(setup)

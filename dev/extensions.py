@@ -68,6 +68,27 @@ def combine(*Dicts):
 		Ret.update(Dict)
 
 	return Ret
+	
+def merge(*Dicts):
+	r"""
+	Recursively merges the passed dictionaries.
+	"""
+	Ret = {}
+	
+	for Dict in Dicts:
+		for key, value in Dict.iteritems():
+			if key in Ret:
+				tgtValue = Ret[key]
+				
+				if hasattr(tgtValue, 'iteritems') and hasattr(value, 'iteritems'):
+					value = merge(tgtValue, value)
+					
+				Ret[key] = value
+			
+			else:
+				Ret[key] = value
+				
+	return Ret
 
 def walk(Iterable, RouteParts=None):
 	if RouteParts is None:
