@@ -38,14 +38,19 @@ def details(Obj):
 
 	return Obj
 
-# Pretty prints the given iterable (dictionary, list etc).
-def pPrint(Iterable, indent=0):
+# Makes pretty the given iterable (dictionary, list etc).
+def getPretty(Iterable, indent=0):
+	ret = ''
+
 	for key, value in pairs(Iterable):
 		if hasattr(value, 'iteritems') or hasattr(value, 'next'): #pylint: disable=W1504
-			print '%s%s:' % ('\t' * indent, key)
-			pPrint(value, indent + 1)
+			ret += '%s%s:\n%s\n' % ('\t' * indent, key, getPretty(value, indent + 1))
 
 		else:
-			print '%s%s: %s' % ('\t' * (indent), key, value)
+			ret += '%s%s: %s\n' % ('\t' * indent, key, value)
 
-	print ''
+	return ret
+
+# Pretty prints the given iterable.
+def pPrint(Iterable):
+	print getPretty(Iterable, 0)

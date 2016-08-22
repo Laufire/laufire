@@ -12,11 +12,11 @@ import fnmatch
 import re
 
 from os import unlink, rmdir, sep as os_sep, makedirs
-from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, normpath
+from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, normpath, basename
 from glob2 import glob
 from shutil import copy as _copy, copytree
 
-from laufire.utils import getRandomString
+from laufire.utils import getRandomString, getTimeString
 
 from laufire.helpers.filesys import link, symlink, rmlink, isSymlink
 
@@ -247,6 +247,47 @@ def getPathType(path):
 			break
 
 	return ret
+
+def compress(sourcePath, targetPath): # #Note: shutil.make_archive isn't used due to it forcing the zip extension and due to the need for maintaing a compression standard.
+	if not exists(sourcePath):
+		raise('No such path: %s' % sourcePath)
+
+	if exists(targetPath):
+		_removePath(targetPath)
+
+	from zipfile import ZipFile, ZIP_DEFLATED
+
+	ZipFileObj = ZipFile(targetPath, 'w', ZIP_DEFLATED)
+
+	if isContainer(sourcePath):
+		for root, dummy, Files in os.walk(sourcePath):
+			for file in Files:
+				ZipFileObj.write('%s/%s' % (root, file))
+
+	else:
+		dir, name = pathSplit(sourcePath) # The circus is to write the file without the leading paths.
+		cwd = os.getcwd()
+		os.chdir(dir)
+		ZipFileObj.write(name)
+		os.chdir(cwd)
+
+	ZipFileObj.close()
+
+def extract(sourcePath, targetPath): # #Note: The tagertPath points to the extraction root, hence it should be a dir.
+	from zipfile import ZipFile
+
+	with ZipFile(sourcePath, 'r') as Z:
+		Z.extractall(targetPath)
+
+def backup(sourcePath, backupBase=None):
+	r"""Backs up the given path.
+
+	When backupBase isn't given the path is renamed, not moved.
+	"""
+	targetPath = '%s%s%s.bak' % (('%s/' % backupBase) if backupBase else '', basename(sourcePath), getTimeString())
+	removePath(targetPath)
+
+	os.rename(sourcePath, targetPath)
 
 # Init
 def setup(Project):

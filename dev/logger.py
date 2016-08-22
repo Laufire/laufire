@@ -3,7 +3,7 @@ import logging
 from colorama import Fore, Style, init as colorama_init
 
 # Delegates
-Logger = logging.getLogger()
+Logger = logging.getLogger('<unnamed>')
 
 # Exports
 __all__ = ['log', 'logError', 'debug']

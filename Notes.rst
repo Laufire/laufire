@@ -48,6 +48,8 @@ Later
 
 * Add tests.
 
+* Add support for LZMA, without delegating it to binaries.
+
 Log
 ---
 
@@ -117,3 +119,7 @@ Log
 	* 1052	Store scripts could now be called, directly with ec syntax, to perform setup etc. Currently the commands setup, var and dump are supported.
 	* 1703	Bug fixed: In ecstore, The previous additions didn't integrate with the existing structure.
 	* 1926	Bug fixed: In ecstore, nested dictionaries from external sources were not parsed properly.
+
+* 160822
+
+	* 0320	Introduced filesys.compress and filesys.extract.
