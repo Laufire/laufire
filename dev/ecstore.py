@@ -54,19 +54,19 @@ def collectChildren(Obj):
 def getRoute(branch, path):
 	return ('%s/%s' % (branch, path)) if branch else path
 
-def getDataMembers(Dict, branch, Buffer):
-	Members = Buffer['Members']
+def getConfigsFromDict(Dict, branch, Buffer):
+	Configs = Buffer['Configs']
 	Order = []
-	Members[branch] = {'Order': Order}
+	Configs[branch] = {'Order': Order}
 
 	for key, value in Dict.iteritems():
 		route = getRoute(branch, key)
+		Order.append(route)
 
 		if  hasattr(value, 'iteritems'):
-			getDataMembers(value, route, Buffer)
+			getConfigsFromDict(value, route, Buffer)
 
 		else:
-			Order.append(route)
 			Buffer['Values'][route] = value
 
 def processCollected(Dict, branch, Buffer):
@@ -77,15 +77,15 @@ def processCollected(Dict, branch, Buffer):
 
 		if Children is not None: # We've got a branch.
 			Config = Value['Config']
-			Buffer['Members'][route] = Config
+			Buffer['Configs'][route] = Config
 			Config['Order'] = [getRoute(route, k) for k in Children]
 			processCollected(Children, route, Buffer)
 
 		elif 'Data' in Value: # We've got a data dictionary.
-			getDataMembers(Value['Data'], route, Buffer)
+			getConfigsFromDict(Value['Data'], route, Buffer)
 
 		else: # We've got a var.
-			Buffer['Members'][route] = Value
+			Buffer['Configs'][route] = Value
 
 def getStoreTable(Config):
 	filePath = Config['filePath']
@@ -143,7 +143,7 @@ class ReadOnlyStore:
 		Routes = Values.keys()
 		Routes.sort(lambda x, y: cmp(len(x), len(y)) * -1) # Sort the Routes, descending by length, so that chidren would be processed before parents, thus speeding up the process.
 
-		# Add branch members.
+		# Add branch configs.
 		while Routes:
 			currentRoute = Routes.pop(0)
 			branch, leaf = split(currentRoute)
@@ -172,72 +172,82 @@ class ReadOnlyStore:
 
 class ConfiguredStore:
 	def __init__(self, Buffer, Config):
-		self._Members = Members = Buffer['Members']
+		self._Configs = Configs = Buffer['Configs']
 		self._Values = Values = Buffer['Values']
 		self._Store = Store = getStoreTable(Config)
 
 		StoreValues = Store.getCol('value')
 
-		for route, value in Values.iteritems(): # Write any parsed values to the DB, so that the DB could be shared without the parse source.
+		for route, value in Values.iteritems(): # Write any parsed values to the DB, so that the DB could be shared without the parsed source.
 			self._set(route, value)
 
 		for route, value in StoreValues.iteritems():
-			if route in Members:
+			if route in Configs:
 				Values[route] = loads(value)
 
-			else:
+			elif route not in Values: # Delete residual routes from the DB.
 				Store.delete(route)
 
 		for key, value in Values.iteritems():
-			Member = Members[key]
+			Config = Configs.get(key)
 
-			if 'live' in Member:
-				Member['hook'](value, 'init')
+			if Config and 'live' in Config:
+				Config['hook'](value, 'init')
 
 	def __del__(self):
 		if hasattr(self, '_Store'):
 			self.close()
 
 	def var(self, route, value=None): #pylint: disable=W0221
-		Member = self._Members.get(route)
+		Config = self._Configs.get(route)
 
 		if value is None:
 
-			if Member and 'Order' in Member: # Return the values from the Children.
+			if not Config:
+				return self._Values[route]
+
+			if 'Order' in Config: # Return the values from the Children.
 				Ret = {}
-				for i in Member['Order']:
+				for i in Config['Order']:
 					Ret[getLeaf(i)] = self.var(i)
 
 				return Ret
 
-			elif Member.get('live'):
+			else:
 				storeValue = self._Values[route]
 
-				ret = Member['hook'](storeValue, 'get')
+				if Config.get('live'): # Pass the value to the hook.
+					ret = Config['hook'](storeValue, 'get')
 
-				return storeValue if ret is None else ret
+					if ret is not None:
+						return ret
 
-			return self._Values[route]
+				return storeValue
 
-		elif not 'name' in Member: # We've got an updatable node.
-			raise Exception('Cannot set the value of parsed data.')
+		else:
 
-		if 'type' in Member:
-			value = Member['type'](value)
+			if not Config:
+				raise Exception('Cannot set the value of a read-only var.')
 
-		if 'hook' in Member:
-			ret = Member['hook'](value) if not Member.get('live') else Member['hook'](value, 'set')
+			elif 'Order' in Config:
+				raise Exception('The route poins to a branch, not a var.')
 
-			if ret is not None: # Hooks can manipulate the passed values and return them to be stored.
-				value = ret
+			if 'type' in Config and value is not None:
+				value = Config['type'](value)
 
-		self._set(route, value)
+			if 'hook' in Config:
+				ret = Config['hook'](value) if not Config.get('live') else Config['hook'](value, 'set')
+
+				if ret is not None: # Hooks can manipulate the passed values and return them to be stored.
+					value = ret
+
+			self._set(route, value)
 
 	def __getitem__(self, route):
 		return self.var(route)
 
 	def setup(self, overwrite=False):
-		for route in self._Members['']['Order']:
+		for route in self._Configs['']['Order']:
 			if overwrite or route not in self._Values:
 				self.get(route, overwrite)
 
@@ -245,12 +255,12 @@ class ConfiguredStore:
 				print '%s: %s' % (route, self._Values[route])
 
 	def get(self, route, overwrite=False):
-		Member = self._Members[route]
-		Order = Member.get('Order')
+		Config = self._Configs[route]
+		Order = Config.get('Order')
 		prefix = '  ' * route.count('/')
 
 		if Order:
-			name = Member.get('name')
+			name = Config.get('name')
 
 			if name: #  # We've got a branch
 				print '\n%s%s:' % (prefix, name) # #Note" Tabs aren't used for branch identification, due the space constrains of the terminal.
@@ -266,10 +276,10 @@ class ConfiguredStore:
 			Values = self._Values
 
 			if route not in Values:
-				self._get(route, combine(Member, {'prefix': prefix}))
+				self._get(route, combine(Config, {'prefix': prefix}))
 
 			elif overwrite:
-				self._get(route, combine(Member, {'default': Values[route], 'prefix': prefix})) # Have the existing value as the default.
+				self._get(route, combine(Config, {'default': Values[route], 'prefix': prefix})) # Have the existing value as the default.
 
 			else:
 				print '%s%s: %s' % (prefix, getLeaf(route), Values[route])
@@ -282,11 +292,11 @@ class ConfiguredStore:
 		self._Values[route] = value # Set the value in the Cache.
 
 	def dump(self, route=''):
-		Order = self._Members[route]['Order']
+		Order = self._Configs[route]['Order']
 
 		for route in Order:
-			Member = self._Members[route]
-			if 'Order' in Member:
+			Config = self._Configs[route]
+			if 'Order' in Config:
 				print '\n%s:' % re.sub(keyPartPattern, '  ', route)
 				self.dump(route)
 				print ''
@@ -326,11 +336,11 @@ def root(Cls=None, **Config):
 		return lambda Cls: root(Cls, **Config)
 
 	Collected = collectChildren(Cls)
-	Members = {}
-	Buffer = {'Members': Members, 'Values': {}}
+	Configs = {}
+	Buffer = {'Configs': Configs, 'Values': {}}
 
 	processCollected(Collected, '', Buffer)
-	Members[''] = {'Order': Collected.keys()} # Add the root member.
+	Configs[''] = {'Order': Collected.keys()} # Add the root config.
 
 	Store = ConfiguredStore(Buffer, Config)
 

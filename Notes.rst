@@ -33,6 +33,10 @@ ToDo
 Pending
 -------
 
+* Add a module for cryptography, especially to help with storing sensitive data on ecstore. Live hooks could be used to encrypt and decrypt the values.
+
+* Write tests.
+
 * Make the package publishable.
 
 * Bring the venv management too. It's not yet brought in due to it being costly and due to not many projects needing it.
@@ -111,3 +115,5 @@ Log
 	* 1000	Most modules doesn't import Project anymore, so now these modules can now be used without defining a Project.
 	* 1030	ecstore.var now supports: get, set and init through hooks.
 	* 1052	Store scripts could now be called, directly with ec syntax, to perform setup etc. Currently the commands setup, var and dump are supported.
+	* 1703	Bug fixed: In ecstore, The previous additions didn't integrate with the existing structure.
+	* 1926	Bug fixed: In ecstore, nested dictionaries from external sources were not parsed properly.

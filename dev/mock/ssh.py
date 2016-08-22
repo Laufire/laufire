@@ -3,7 +3,7 @@ A module to help with debelopment.
 """
 import json
 
-from laufire.filesys import copy
+from laufire.filesys import copy, ensureParent
 from laufire.logger import debug
 from laufire.shell import call, debugCall, assertShell
 from laufire.ssh import GatewayConfig, getTgtPath
@@ -14,7 +14,7 @@ mockScriptTpl = MockConfig['scriptTemplate']
 scriptsDir = MockConfig['scriptsDir']
 
 class SSHBridgeMocker:
-	r"""A class to help with the dvelopment of gateway scripts, by passing the commands to them instead of their remote peers.
+	r"""A class to help with the development of gateway scripts, by executing the commands locally.
 	"""
 	def callScript(self, ecCommand):
 		out = assertShell(call(mockScriptTpl % ecCommand))
@@ -31,4 +31,4 @@ class SSHBridgeMocker:
 		ensureParent(tgtPath)
 		return copy(srcPath, tgtPath)
 
-Gateway = SSHBridgeMocker() #DevComment: #Note: Uncomment this line to use the local gateway scripts, instead of the remote ones, so to aid development.
+Gateway = SSHBridgeMocker()

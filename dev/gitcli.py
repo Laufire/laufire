@@ -7,6 +7,8 @@ A module to help with git related tasks. It depends upon the availability of the
 Notes:
 
 	* **cwd**, **HEAD** and **the current branch** are assumed to be the defaults.
+
+# #Pending: Use a class, so that commands do not have to depend upon the CWD.
 """
 from subprocess import Popen, PIPE
 from shlex import split
