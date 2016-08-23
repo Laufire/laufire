@@ -58,7 +58,7 @@ def _removePath(targetPath):
 		return 1 # error
 
 # Exports
-def relpath(basePath, relation):
+def resolve(basePath, relation):
 	r"""Resolves a relative path of the given basePath.
 
 	Args:
@@ -209,10 +209,10 @@ def collectPaths(base, Includes=None, Excludes=None, absPaths=False, regex=False
 
 		# Exclude dirs.
 		Dirs[:] = [d for d in Dirs if not re.match(excludes, d)]
-		AllDirs += [('%s/%s' % (root, d)).replace('\\', '/') for d in Dirs]
+		AllDirs += [(pathJoin(root, d)).replace('\\', '/') for d in Dirs]
 
 		# Exclude / Include files.
-		Files = [('%s/%s' % (root, f)).replace('\\', '/') for f in Files]
+		Files = [(pathJoin(root, f)).replace('\\', '/') for f in Files]
 		Files = [f for f in Files if not re.match(excludes, f)]
 		Files = [f for f in Files if re.match(includes, f)]
 
@@ -259,17 +259,22 @@ def compress(sourcePath, targetPath): # #Note: shutil.make_archive isn't used du
 
 	ZipFileObj = ZipFile(targetPath, 'w', ZIP_DEFLATED)
 
+	cwd = os.getcwd() # The CWD circus is to reduce the relpath calls.
+
 	if isContainer(sourcePath):
-		for root, dummy, Files in os.walk(sourcePath):
+		os.chdir(sourcePath)
+
+		for root, dummy1, Files in os.walk('.'):
 			for file in Files:
-				ZipFileObj.write('%s/%s' % (root, file))
+				ZipFileObj.write(pathJoin(root, file))
 
 	else:
-		dir, name = pathSplit(sourcePath) # The circus is to write the file without the leading paths.
-		cwd = os.getcwd()
+		dir, name = pathSplit(sourcePath)
 		os.chdir(dir)
+
 		ZipFileObj.write(name)
-		os.chdir(cwd)
+
+	os.chdir(cwd)
 
 	ZipFileObj.close()
 

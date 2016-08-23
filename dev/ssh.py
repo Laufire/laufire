@@ -145,7 +145,7 @@ class SSHBridge:
 		return json.loads(out) if out else None
 
 	def upload(self, srcPath, tgtPath=''): # #Note: Uploads are done always to the temp dir.
-		return self.Client.upload(srcPath, '%s/%s' % (GatewayConfig['tempDir'], getTgtPath(tgtPath, srcPath)))
+		return self.Client.upload(srcPath, '%s/%s' % ('~/gateway/_temp', getTgtPath(tgtPath, srcPath)))
 
 # Delegates
 Gateway = SSHBridge(Config['SSH'])

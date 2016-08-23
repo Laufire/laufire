@@ -33,6 +33,8 @@ ToDo
 Pending
 -------
 
+* Restructure the Config format, especially for the settings keys like **Paths** (for Gateway Config) etc.
+
 * Add a module for cryptography, especially to help with storing sensitive data on ecstore. Live hooks could be used to encrypt and decrypt the values.
 
 * Write tests.
@@ -123,3 +125,4 @@ Log
 * 160822
 
 	* 0320	Introduced filesys.compress and filesys.extract.
+	* 0525	Bug fixed: In filesys.compress. Path handling had some issues.
