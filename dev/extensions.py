@@ -68,26 +68,26 @@ def combine(*Dicts):
 		Ret.update(Dict)
 
 	return Ret
-	
+
 def merge(*Dicts):
 	r"""
 	Recursively merges the passed dictionaries.
 	"""
 	Ret = {}
-	
+
 	for Dict in Dicts:
 		for key, value in Dict.iteritems():
 			if key in Ret:
 				tgtValue = Ret[key]
-				
+
 				if hasattr(tgtValue, 'iteritems') and hasattr(value, 'iteritems'):
 					value = merge(tgtValue, value)
-					
+
 				Ret[key] = value
-			
+
 			else:
 				Ret[key] = value
-				
+
 	return Ret
 
 def walk(Iterable, RouteParts=None):
@@ -98,11 +98,11 @@ def walk(Iterable, RouteParts=None):
 		RouteParts[-1 if RouteParts else 0] = key
 
 		if isIterable(val):
-			for RouteParts, val in walk(val, [key]):
-				yield [key] + RouteParts, val
+			for val, RouteParts, Iterable in walk(val, [key]):
+				yield val, [key] + RouteParts, Iterable
 
 		else:
-			yield RouteParts, val
+			yield val, RouteParts, Iterable
 
 def unnest(Dict, separator='/', Target=None):
 	r"""Gets a routed dictionary from a nested one.
@@ -110,7 +110,7 @@ def unnest(Dict, separator='/', Target=None):
 	if Target is None:
 		Target = {}
 
-	for RouteParts, val in walk(Dict):
+	for val, RouteParts, dummy in walk(Dict):
 		Target[separator.join(RouteParts)] = val
 
 	return Target

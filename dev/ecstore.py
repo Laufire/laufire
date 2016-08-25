@@ -1,6 +1,9 @@
 r"""A module to help with stroring validated data.
 
+#Later: vars could use Classes to define separate hooks for get, set etc; instead of using the current, two param function hooks. Note, add this feature, while retaining the single function hook, without commands, which is to be called on init and set.
+#Later: Think of using **with blocks** for declaration, instead of decorators, as the syntax looks cleaner. #Refer: http://stackoverflow.com/questions/1255914/finding-functions-defined-in-a-with-block
 #Later: Branch level hooks that are to be called when any of its Children are changed.
+
 """
 import re
 
@@ -148,7 +151,7 @@ class ReadOnlyStore:
 			currentRoute = Routes.pop(0)
 			branch, leaf = split(currentRoute)
 
-			if not leaf or Values.get(branch):
+			if not leaf or Values.get(branch): # The route points to the root or an existing branch.
 				continue
 
 			Values[branch] = {'Routes': [route for route in Routes if getBranch(route) == branch] + [currentRoute]}
@@ -160,7 +163,7 @@ class ReadOnlyStore:
 	def var(self, route):
 		Value = self._Values[route]
 
-		if Value and 'Routes' in Value: # Return the values from the Children
+		if hasattr(Value, '__getitem__') and 'Routes' in Value: # Return the values from the Children
 			Ret = {}
 
 			for i in Value['Routes']:

@@ -16,53 +16,53 @@ def getNthLine(string, N):
 	return string.strip().split('\n')[N]
 
 # Exports
-def run(command, **kwargs):
+def run(command, **KWArgs):
 	r"""Starts a process, waits till the process completes and returns the return-code.
 
 	#Tip: Use this method to live stream output from the command.
 	"""
 	debug(command)
-	debug(kwargs)
+	debug(KWArgs)
 
-	p = Popen(split(command), **kwargs)
+	p = Popen(split(command), **KWArgs)
 	p.wait()
 
 	return p.returncode
 
-def call(command, **kwargs): # from gitapi.py
+def call(command, **KWArgs): # from gitapi.py
 	r"""Starts a process, waits till the process completes and returns a dictionary with the return-code, stdout and stderr.
 
 	#Tip: Use this method when there's a need to process stdout or stderr.
 	"""
 	debug(command)
-	debug(kwargs)
+	debug(KWArgs)
 
-	p = Popen(split(command), stdout=PIPE, stderr=PIPE, **kwargs)
+	p = Popen(split(command), stdout=PIPE, stderr=PIPE, **KWArgs)
 	out, err = [x.decode("utf-8") for x in p.communicate()]
 
 	return {'out': out, 'err': err, 'code': p.returncode}
 
-def debugCall(command, **kwargs):
+def debugCall(command, **KWArgs):
 	r"""Starts a process, waits till the process completes and returns a dictionary with the return-code, stdout and stderr.
 
 	#Tip: Use this method call scripts during development, errors would be logged to the live stderr, at the same time stdout could be buffered for processing.
 	#Tip: A modified pdb like, modPdb = pdb.Pdb(stdout=sys.__stderr__), could be used to debug scripts in stderr.
 	"""
 	debug(command)
-	debug(kwargs)
+	debug(KWArgs)
 
-	p = Popen(split(command), stdout=PIPE, **kwargs)
+	p = Popen(split(command), stdout=PIPE, **KWArgs)
 	out = p.communicate()[0].decode("utf-8")
 
 	return {'out': out, 'err': '', 'code': p.returncode}
 
-def launch(command, **kwargs):
+def launch(command, **KWArgs):
 	r"""Launches a process and quits without waiting for its completion.
 	"""
 	debug(command)
-	debug(kwargs)
+	debug(KWArgs)
 
-	Popen(split(command), stdout=PIPE, stderr=PIPE, **kwargs)
+	Popen(split(command), stdout=PIPE, stderr=PIPE, **KWArgs)
 
 class CwdSwitch:
 	r"""Helps with switching the CWD.

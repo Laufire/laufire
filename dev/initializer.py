@@ -70,7 +70,7 @@ def addDevBuiltins():
 	from laufire import dev
 	import __builtin__
 
-	for attr in ['pPrint', 'peek', 'details']:
+	for attr in [attr for attr in dir(dev) if attr[0] != 0]: # Add all the attributes of the module, dev to built-ins.
 		setattr(__builtin__, attr, getattr(dev, attr))
 
 def setSettings():

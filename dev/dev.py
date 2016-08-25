@@ -54,3 +54,4 @@ def getPretty(Iterable, indent=0):
 # Pretty prints the given iterable.
 def pPrint(Iterable):
 	print getPretty(Iterable, 0)
+	return Iterable

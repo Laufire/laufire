@@ -16,11 +16,8 @@ from laufire.filesys import getPathType
 from laufire.logger import debug
 from laufire.shell import assertShell
 
-from Project import Config
-
 # Data
 homeDirPatern = compile(r'^~/')
-GatewayConfig = Config['Gateway']
 
 # Helpers
 def expandPath(path, homeDir):
@@ -129,8 +126,9 @@ class SSHClient(paramiko.SSHClient):
 class SSHBridge:
 	r"""An abstraction layer over the SSH client.
 	"""
-	def __init__(self, SSHConfig):
-		self.Client = Lazy(SSHClient, SSHConfig) # #Note: SSHBridge is initialized as lazy class, as parmiko cannot connect to the server when modules are being loaded, dur to some internals of threading.
+	def __init__(self, Config):
+		self.GatewayConfig = Config['Gateway']
+		self.Client = Lazy(SSHClient, Config['SSHConfig']) # #Note: SSHBridge is initialized as lazy class, as parmiko cannot connect to the server when modules are being loaded, dur to some internals of threading.
 
 	def execute(self, command):
 		return self.Client.execute(command)
@@ -138,14 +136,11 @@ class SSHBridge:
 	def iexecute(self, command):
 		r"""Interpolates the command with the Config, before executing.
 		"""
-		return self.Client.execute(command.format(**GatewayConfig))
+		return self.Client.execute(command.format(**self.GatewayConfig))
 
 	def callScript(self, ecCommand):
-		out = assertShell(Gateway.iexecute('{pythonPath} {scriptsDir}/%s' % ecCommand))
+		out = assertShell(self.iexecute('{pythonPath} {scriptsDir}/%s' % ecCommand))
 		return json.loads(out) if out else None
 
 	def upload(self, srcPath, tgtPath=''): # #Note: Uploads are done always to the temp dir.
 		return self.Client.upload(srcPath, '%s/%s' % ('~/gateway/_temp', getTgtPath(tgtPath, srcPath)))
-
-# Delegates
-Gateway = SSHBridge(Config['SSH'])

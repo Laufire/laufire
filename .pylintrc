@@ -6,7 +6,7 @@ ignore = venv
 [VARIABLES]
 dummy-variables-rqx = dummy.*$
 
-additional-builtins = pPrint, peek, details
+additional-builtins = pPrint, peek, details, getPretty
 
 [MESSAGES CONTROL]
 # C101: Line too long (skipped due to the adoption of a different convention).

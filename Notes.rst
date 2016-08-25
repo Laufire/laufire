@@ -126,3 +126,11 @@ Log
 
 	* 0320	Introduced filesys.compress and filesys.extract.
 	* 0525	Bug fixed: In filesys.compress. Path handling had some issues.
+
+* 160825
+
+	* 0625	Changed the yielded values of extensions.walk.
+
+* 160826
+
+	* 0033	Added laufire.mockable as a centralized provider for mockables and their mocked counterparts.
