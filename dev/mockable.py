@@ -1,6 +1,8 @@
 r"""
 A module with constructors for mockable objects and their mocks.
 """
+from laufire.logger import log
+
 # State
 Gateway = None
 
@@ -20,6 +22,8 @@ def getGateway(Config, shouldMock, cached=True):
 			return Gateway
 
 	if shouldMock:
+		log('====== Gate mocked ======')
+		
 		from laufire.mock.ssh import SSHBridgeMocker
 		Gateway = SSHBridgeMocker(Config)
 

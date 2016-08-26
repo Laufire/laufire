@@ -71,8 +71,8 @@ def mkdirs(SFTP, remotePath):
 			else:
 				currentPath += '/%s' % Skipped.pop(0)
 
-def getTgtPath(tgtPath, srcPath):
-	return tgtPath if tgtPath else basename(srcPath)
+def getTgtName(tgtName, srcPath):
+	return tgtName if tgtName else basename(srcPath)
 
 class SSHClient(paramiko.SSHClient):
 	r"""Bridges with the SSH gateway of the remote host.
@@ -99,7 +99,7 @@ class SSHClient(paramiko.SSHClient):
 
 	def download(self, remotePath, localPath=''):
 		SFTP = self.open_sftp()
-		SFTP.get(expandPath(remotePath, self._homeDir), getTgtPath(localPath, remotePath))
+		SFTP.get(expandPath(remotePath, self._homeDir), getTgtName(localPath, remotePath))
 		SFTP.close()
 
 	def upload(self, localPath, remotePath):
@@ -128,7 +128,7 @@ class SSHBridge:
 	"""
 	def __init__(self, Config):
 		self.GatewayConfig = Config['Gateway']
-		self.Client = Lazy(SSHClient, Config['SSHConfig']) # #Note: SSHBridge is initialized as lazy class, as parmiko cannot connect to the server when modules are being loaded, dur to some internals of threading.
+		self.Client = Lazy(SSHClient, Config['SSH']) # #Note: SSHBridge is initialized as lazy class, as parmiko cannot connect to the server when modules are being loaded, dur to some internals of threading.
 
 	def execute(self, command):
 		return self.Client.execute(command)
@@ -142,5 +142,5 @@ class SSHBridge:
 		out = assertShell(self.iexecute('{pythonPath} {scriptsDir}/%s' % ecCommand))
 		return json.loads(out) if out else None
 
-	def upload(self, srcPath, tgtPath=''): # #Note: Uploads are done always to the temp dir.
-		return self.Client.upload(srcPath, '%s/%s' % ('~/gateway/_temp', getTgtPath(tgtPath, srcPath)))
+	def upload(self, srcPath, tgtName=''): # #Note: Uploads are always done to the temp dir.
+		return self.Client.upload(srcPath, '%s/%s' % ('~/gateway/_temp', getTgtName(tgtName, srcPath)))

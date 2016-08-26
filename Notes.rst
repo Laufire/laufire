@@ -134,3 +134,5 @@ Log
 * 160826
 
 	* 0033	Added laufire.mockable as a centralized provider for mockables and their mocked counterparts.
+	* 0330	Tuned the module, ecstore.
+	* 0630	Added shell.piped.

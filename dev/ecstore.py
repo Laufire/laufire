@@ -59,12 +59,12 @@ def getRoute(branch, path):
 
 def getConfigsFromDict(Dict, branch, Buffer):
 	Configs = Buffer['Configs']
-	Order = []
-	Configs[branch] = {'Order': Order}
+	Routes = []
+	Configs[branch] = {'Routes': Routes}
 
 	for key, value in Dict.iteritems():
 		route = getRoute(branch, key)
-		Order.append(route)
+		Routes.append(route)
 
 		if  hasattr(value, 'iteritems'):
 			getConfigsFromDict(value, route, Buffer)
@@ -81,7 +81,7 @@ def processCollected(Dict, branch, Buffer):
 		if Children is not None: # We've got a branch.
 			Config = Value['Config']
 			Buffer['Configs'][route] = Config
-			Config['Order'] = [getRoute(route, k) for k in Children]
+			Config['Routes'] = [getRoute(route, k) for k in Children]
 			processCollected(Children, route, Buffer)
 
 		elif 'Data' in Value: # We've got a data dictionary.
@@ -209,9 +209,9 @@ class ConfiguredStore:
 			if not Config:
 				return self._Values[route]
 
-			if 'Order' in Config: # Return the values from the Children.
+			if 'Routes' in Config: # Return the values from the Children.
 				Ret = {}
-				for i in Config['Order']:
+				for i in Config['Routes']:
 					Ret[getLeaf(i)] = self.var(i)
 
 				return Ret
@@ -232,7 +232,7 @@ class ConfiguredStore:
 			if not Config:
 				raise Exception('Cannot set the value of a read-only var.')
 
-			elif 'Order' in Config:
+			elif 'Routes' in Config:
 				raise Exception('The route poins to a branch, not a var.')
 
 			if 'type' in Config and value is not None:
@@ -250,7 +250,7 @@ class ConfiguredStore:
 		return self.var(route)
 
 	def setup(self, overwrite=False):
-		for route in self._Configs['']['Order']:
+		for route in self._Configs['']['Routes']:
 			if overwrite or route not in self._Values:
 				self.get(route, overwrite)
 
@@ -259,21 +259,21 @@ class ConfiguredStore:
 
 	def get(self, route, overwrite=False):
 		Config = self._Configs[route]
-		Order = Config.get('Order')
+		Routes = Config.get('Routes')
 		prefix = '  ' * route.count('/')
 
-		if Order:
+		if Routes:
 			name = Config.get('name')
 
 			if name: #  # We've got a branch
-				print '\n%s%s:' % (prefix, name) # #Note" Tabs aren't used for branch identification, due the space constrains of the terminal.
+				print '\n%s%s:' % (prefix, name) # #Note" Tabs aren't used for branch indention, due the space constrains of the terminal.
 
-				for route in Order:
+				for route in Routes:
 					self.get(route, overwrite)
 
 				print ''
 
-			# We've got a parsed. Hence return without doing anything.
+			# We've got a parsed value. Hence return without doing anything.
 
 		else:
 			Values = self._Values
@@ -295,17 +295,19 @@ class ConfiguredStore:
 		self._Values[route] = value # Set the value in the Cache.
 
 	def dump(self, route=''):
-		Order = self._Configs[route]['Order']
+		Routes = self._Configs[route]['Routes']
 
-		for route in Order:
-			Config = self._Configs[route]
-			if 'Order' in Config:
-				print '\n%s:' % re.sub(keyPartPattern, '  ', route)
+		for route in Routes:
+			Config = self._Configs.get(route)
+			keyText = '%s%s' % ('  ' * route.count('/'), getLeaf(route))
+
+			if Config and 'Routes' in Config:
+				print '\n%s:' % keyText
 				self.dump(route)
 				print ''
 
 			else:
-				print '%s: %s' % (re.sub(keyPartPattern, '  ', route), self._Values.get(route))
+				print '%s: %s' % (keyText, self._Values.get(route))
 
 	def close(self):
 		self._Store.close()
@@ -343,7 +345,7 @@ def root(Cls=None, **Config):
 	Buffer = {'Configs': Configs, 'Values': {}}
 
 	processCollected(Collected, '', Buffer)
-	Configs[''] = {'Order': Collected.keys()} # Add the root config.
+	Configs[''] = {'Routes': Collected.keys()} # Add the root config.
 
 	Store = ConfiguredStore(Buffer, Config)
 

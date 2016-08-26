@@ -6,7 +6,7 @@ import json
 from laufire.filesys import copy, ensureParent
 from laufire.logger import debug
 from laufire.shell import call, debugCall, assertShell
-from laufire.ssh import getTgtPath
+from laufire.ssh import getTgtName
 
 class SSHBridgeMocker:
 	r"""A class to help with the development of gateway scripts, by executing the commands locally.
@@ -30,6 +30,6 @@ class SSHBridgeMocker:
 		debugCall(self.mockScriptTpl % ecCommand, cwd=self.mockBase)
 
 	def upload(self, srcPath, tgtPath=''): # #Note: Uploads are done always to the temp dir.
-		tgtPath = '%s/%s/%s' % (self.mockBase, self.GatewayConfig['Paths']['temp'], getTgtPath(tgtPath, srcPath))
+		tgtPath = '%s/%s/%s' % (self.mockBase, self.GatewayConfig['Paths']['temp'], getTgtName(tgtPath, srcPath))
 		ensureParent(tgtPath)
 		return copy(srcPath, tgtPath)

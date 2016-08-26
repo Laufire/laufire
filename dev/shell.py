@@ -38,9 +38,31 @@ def call(command, **KWArgs): # from gitapi.py
 	debug(KWArgs)
 
 	p = Popen(split(command), stdout=PIPE, stderr=PIPE, **KWArgs)
-	out, err = [x.decode("utf-8") for x in p.communicate()]
+	out, err = [x.decode('utf-8') for x in p.communicate()]
 
 	return {'out': out, 'err': err, 'code': p.returncode}
+
+def piped(*Commands, **KWArgs): # from gitapi.py
+	r"""Emulates piped commands in *nix systems. Returns a dictionary with the final return-code, stdout and a stderr.
+	"""
+	debug(KWArgs)
+
+	out = None
+	err = ''
+	code = 0
+
+	for command in Commands:
+		debug(command)
+
+		p = Popen(split(command), stdout=PIPE, stderr=PIPE, stdin=PIPE, **KWArgs)
+		out, err = [x.decode('utf-8') for x in p.communicate(out)]
+
+		code = p.returncode
+
+		if code:
+			break
+
+	return {'out': out, 'err': err, 'code': code}
 
 def debugCall(command, **KWArgs):
 	r"""Starts a process, waits till the process completes and returns a dictionary with the return-code, stdout and stderr.
@@ -52,7 +74,7 @@ def debugCall(command, **KWArgs):
 	debug(KWArgs)
 
 	p = Popen(split(command), stdout=PIPE, **KWArgs)
-	out = p.communicate()[0].decode("utf-8")
+	out = p.communicate()[0].decode('utf-8')
 
 	return {'out': out, 'err': '', 'code': p.returncode}
 
@@ -75,7 +97,6 @@ class CwdSwitch:
 
 	def restore(self):
 		os.chdir(self.cwd)
-
 
 def assertShell(ShellResult, errorLine=None):
 	r"""Asserts the success of a shell command.
