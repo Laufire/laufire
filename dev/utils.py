@@ -16,9 +16,9 @@ def getMD5(filePath): # #From: http://stackoverflow.com/questions/3431825/genera
 def getTimeString(useLocal=False):
 	r"""Returns the current time as a path friendly string.
 	"""
-	import time
+	from datetime import datetime
 
-	return time.strftime('%y%m%d%H%M%S', (time.localtime if useLocal else time.gmtime)(time.time()))
+	return (datetime.now if useLocal else datetime.utcnow)().strftime('%y%m%d%H%M%S%f')[:-3]
 
 def getRandomString(length=8):
 	import random

@@ -28,6 +28,9 @@ def namespace(wrapper):
 		returned.__dict__.update(wrapper.__dict__)
 
 		return returned
+		
+def isIterable(obj):
+	return hasattr(obj, 'iteritems') or hasattr(obj, '__iter__')
 
 def pairs(Iterable):
 	r"""Provides a generator to iterate over key, value pairs of iterables.
@@ -38,9 +41,6 @@ def values(Iterable):
 	r"""Provides a generator to iterate over key, value pairs of iterables.
 	"""
 	return Iterable.values() if hasattr(Iterable, 'values') else Iterable
-
-def isIterable(value):
-	return hasattr(value, 'iteritems') or hasattr(value, 'next')
 
 def flatten(Iterable):
 	r"""Collects all the values from the given iterable.

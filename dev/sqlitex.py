@@ -37,6 +37,12 @@ class SQLiteDB:
 		if self._inited:
 			self.close()
 
+	def execFile(self, filePath):
+		r"""Helps with executing sql files.
+		"""
+		for line in open(filePath):
+			self.execute(line.rstrip('\r\n '))
+
 	def close(self):
 		r"""Close the DB.
 
@@ -152,6 +158,24 @@ def importTables(toDBPath, fromDBPath, TableNames):
 		TargetDB.execute('INSERT OR REPLACE INTO {0} SELECT * FROM patch.{0};'.format(tableName))
 
 	TargetDB.execute('DETACH patch;')
+	TargetDB.execute("VACUUM;")
+	TargetDB.commit()
+	TargetDB.close()
+
+def importTablesFromFille(toDBPath, fromFilePath, tableName=None, delimiter='\t', lineterminator='\n'):
+	import csv
+
+	if not tableName:
+		from os.path import splitext, basename
+		tableName = basename(splitext(fromFilePath)[0]) # Use the file name as the table name.
+
+	Rows = [Row for Row in csv.reader(open(fromFilePath, 'rb+'), delimiter=delimiter, lineterminator=lineterminator)]
+
+	if not Rows:
+		return
+
+	TargetDB = SQLiteDB(toDBPath)
+	TargetDB.executemany('INSERT OR REPLACE INTO {0} VALUES({1});'.format(tableName, ','.join(['?'] * len(Rows[0]))), Rows)
 	TargetDB.execute("VACUUM;")
 	TargetDB.commit()
 	TargetDB.close()

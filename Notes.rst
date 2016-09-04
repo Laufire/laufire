@@ -52,6 +52,8 @@ Later
 
 * Add support for LZMA, without delegating it to binaries.
 
+* Think of adding Project.workDir as the base work path (for file operations etc), which could save the accidental deletion of source files.
+
 Log
 ---
 
@@ -136,3 +138,13 @@ Log
 	* 0033	Added laufire.mockable as a centralized provider for mockables and their mocked counterparts.
 	* 0330	Tuned the module, ecstore.
 	* 0630	Added shell.piped.
+
+* 160829
+
+	* 0339	utils.getTimeString made more precise, by adding milli-seconds.
+	* 1419	Added sqlitex.SQLiteDB.execFile, to help with executing SQL files.
+	* 1506	Added sqlitex.SQLiteDB.importTablesFromFille.
+
+* 160904
+	* 0658	Bug Fixed: filesys.isDescendant was considering paths to be the descendants of themselves.
+	* 0837	Bug Fixed: filesys.makeLink wasn't working on linux.

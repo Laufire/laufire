@@ -5,7 +5,6 @@ ignore = venv
 
 [VARIABLES]
 dummy-variables-rqx = dummy.*$
-
 additional-builtins = pPrint, peek, details, getPretty
 
 [MESSAGES CONTROL]

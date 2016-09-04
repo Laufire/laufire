@@ -22,7 +22,7 @@ def getGateway(Config, shouldMock, cached=True):
 			return Gateway
 
 	if shouldMock:
-		log('====== Gate mocked ======')
+		log('====== Gateway mocked ======')
 		
 		from laufire.mock.ssh import SSHBridgeMocker
 		Gateway = SSHBridgeMocker(Config)

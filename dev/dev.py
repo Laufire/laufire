@@ -7,7 +7,7 @@ A module to help with develpment.
 #Later: Think of adding some functions, like scan, to the built-ins, so that there can be used without importing.
 """
 from laufire.flow import forgive
-from laufire.extensions import pairs
+from laufire.extensions import pairs, isIterable
 
 def interactive(func, message):
 	r"""Helps with re-running tasks till there were no errors.
@@ -43,7 +43,7 @@ def getPretty(Iterable, indent=0):
 	ret = ''
 
 	for key, value in pairs(Iterable):
-		if hasattr(value, 'iteritems') or hasattr(value, 'next'): #pylint: disable=W1504
+		if isIterable(value): #pylint: disable=W1504
 			ret += '%s%s:\n%s\n' % ('\t' * indent, key, getPretty(value, indent + 1))
 
 		else:
@@ -52,6 +52,6 @@ def getPretty(Iterable, indent=0):
 	return ret
 
 # Pretty prints the given iterable.
-def pPrint(Iterable):
-	print getPretty(Iterable, 0)
-	return Iterable
+def pPrint(obj):
+	print getPretty(obj, 0) if isIterable(obj) else obj
+	return obj

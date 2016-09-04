@@ -1,5 +1,7 @@
 r"""
 A module to help with making the module, filesys, to wotk across platforms.
+
+# Later: Test the exports on multiple platforms.
 """
 import platform
 
@@ -22,16 +24,20 @@ else:
 	from os.path import abspath
 	from win32com.shell import shell
 	from win32file import FILE_ATTRIBUTE_DIRECTORY, GetFileAttributes
-	from win32file import CreateHardLink as link, CreateSymbolicLink as symlink, RemoveDirectory as rmlink #pylint: disable=W0611
+	from win32file import CreateHardLink as link, CreateSymbolicLink, RemoveDirectory as rmlink #pylint: disable=W0611
 
 	# Constants
 	FILE_ATTRIBUTE_REPARSE_POINT = 1024
 	REPARSE_FOLDER = (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT)
 
 	# Exports
+	def symlink(sourcePath, targetPath):
+		CreateSymbolicLink(targetPath, sourcePath, 1)
 
 	def isSymlink(targetPath):
 		r"""Detects whether the given path is a NTFS junction.
+
+		#Later: Fix: This call fails when the target points to an invalid location.
 		"""
 		# #From: http://stackoverflow.com/questions/1447575/symlinks-on-windows
 		result = GetFileAttributes(targetPath)

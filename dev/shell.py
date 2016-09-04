@@ -1,4 +1,6 @@
 r"""A module to help with shell calls.
+
+# #Note: The processes with huge amounts of stdout or stderr could hang.
 """
 import sys
 import os
@@ -6,6 +8,7 @@ import os
 from subprocess import Popen, PIPE
 from shlex import split as shlexSplit
 
+from laufire.dev import getPretty
 from laufire.logger import debug
 
 # State
@@ -22,7 +25,7 @@ def run(command, **KWArgs):
 	#Tip: Use this method to live stream output from the command.
 	"""
 	debug(command)
-	debug(KWArgs)
+	debug(getPretty(KWArgs))
 
 	p = Popen(split(command), **KWArgs)
 	p.wait()
@@ -35,7 +38,7 @@ def call(command, **KWArgs): # from gitapi.py
 	#Tip: Use this method when there's a need to process stdout or stderr.
 	"""
 	debug(command)
-	debug(KWArgs)
+	debug(getPretty(KWArgs))
 
 	p = Popen(split(command), stdout=PIPE, stderr=PIPE, **KWArgs)
 	out, err = [x.decode('utf-8') for x in p.communicate()]
@@ -45,14 +48,14 @@ def call(command, **KWArgs): # from gitapi.py
 def piped(*Commands, **KWArgs): # from gitapi.py
 	r"""Emulates piped commands in *nix systems. Returns a dictionary with the final return-code, stdout and a stderr.
 	"""
-	debug(KWArgs)
+	debug(getPretty(KWArgs))
 
 	out = None
 	err = ''
 	code = 0
 
 	for command in Commands:
-		debug(command)
+		debug(getPretty(command))
 
 		p = Popen(split(command), stdout=PIPE, stderr=PIPE, stdin=PIPE, **KWArgs)
 		out, err = [x.decode('utf-8') for x in p.communicate(out)]
@@ -71,7 +74,7 @@ def debugCall(command, **KWArgs):
 	#Tip: A modified pdb like, modPdb = pdb.Pdb(stdout=sys.__stderr__), could be used to debug scripts in stderr.
 	"""
 	debug(command)
-	debug(KWArgs)
+	debug(getPretty(KWArgs))
 
 	p = Popen(split(command), stdout=PIPE, **KWArgs)
 	out = p.communicate()[0].decode('utf-8')
@@ -82,7 +85,7 @@ def launch(command, **KWArgs):
 	r"""Launches a process and quits without waiting for its completion.
 	"""
 	debug(command)
-	debug(KWArgs)
+	debug(getPretty(KWArgs))
 
 	Popen(split(command), stdout=PIPE, stderr=PIPE, **KWArgs)
 
@@ -101,7 +104,7 @@ class CwdSwitch:
 def assertShell(ShellResult, errorLine=None):
 	r"""Asserts the success of a shell command.
 	"""
-	debug(ShellResult)
+	debug(getPretty(ShellResult))
 
 	if ShellResult['code']:
 		errorStr = ShellResult['err'] or ShellResult['out']

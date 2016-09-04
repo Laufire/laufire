@@ -1,6 +1,7 @@
 r"""A helper for SSH operations.
 
 #Note: This module needs the SSHConfig to be in Project.Config['SSH']
+#Later: Ad support for recursive downloads.
 """
 import json
 import errno

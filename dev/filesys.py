@@ -102,7 +102,7 @@ def makeLink(sourcePath, targetPath):
 		elif isdir(targetPath):
 			rmtree(targetPath)
 
-		symlink(targetPath, sourcePath, 1)
+		symlink(sourcePath, targetPath)
 
 	else:
 		raise Exception('Invalid source path: %s' % sourcePath)
@@ -232,7 +232,7 @@ def isDescendant(probableDescendant, requiredAncestor):
 		requiredAncestor (str): The absolute path of the required ancestor.
 		probableDescendant (str): The absolute path of the probable descendant.
 	"""
-	return normpath(probableDescendant).find(normpath(requiredAncestor + os_sep)) == 0
+	return normpath(probableDescendant).find(normpath(requiredAncestor)  + os_sep) == 0
 
 def isContainer(path):
 	return isdir(path) or isSymlink(path)
