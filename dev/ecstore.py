@@ -409,9 +409,9 @@ def data(Dict):
 	return ret
 
 def store(**Config):
-	r"""Adds the data from the given store to the store, in read-only mode.
+	r"""Returns the data from the given store, so that it could be to the root store, in read-only mode.
 
 	Args:
-		Check *getStore*.
+		Check the call *getStore*.
 	"""
 	return data(getStore(**Config)[''])

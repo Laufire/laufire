@@ -146,5 +146,11 @@ Log
 	* 1506	Added sqlitex.SQLiteDB.importTablesFromFille.
 
 * 160904
+
 	* 0658	Bug Fixed: filesys.isDescendant was considering paths to be the descendants of themselves.
 	* 0837	Bug Fixed: filesys.makeLink wasn't working on linux.
+
+* 160906
+	
+	* 0714	Robusted the filesys functions copy and makeLink.
+	* 1800	Added shell.getProcessData.

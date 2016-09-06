@@ -99,11 +99,13 @@ class SSHClient(paramiko.SSHClient):
 		return getattr(self._SFTP, attr)
 
 	def download(self, remotePath, localPath=''):
+		debug('downloading %s to %s' % (remotePath, localPath))
 		SFTP = self.open_sftp()
 		SFTP.get(expandPath(remotePath, self._homeDir), getTgtName(localPath, remotePath))
 		SFTP.close()
 
 	def upload(self, localPath, remotePath):
+		debug('uploading %s to %s' % (localPath, remotePath))
 		SFTP = self.open_sftp()
 		_upload(SFTP, localPath, expandPath(remotePath, self._homeDir))
 		SFTP.close()

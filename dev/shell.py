@@ -45,7 +45,7 @@ def call(command, **KWArgs): # from gitapi.py
 
 	return {'out': out, 'err': err, 'code': p.returncode}
 
-def piped(*Commands, **KWArgs): # from gitapi.py
+def piped(*Commands, **KWArgs):
 	r"""Emulates piped commands in *nix systems. Returns a dictionary with the final return-code, stdout and a stderr.
 	"""
 	debug(getPretty(KWArgs))
@@ -77,9 +77,8 @@ def debugCall(command, **KWArgs):
 	debug(getPretty(KWArgs))
 
 	p = Popen(split(command), stdout=PIPE, **KWArgs)
-	out = p.communicate()[0].decode('utf-8')
 
-	return {'out': out, 'err': '', 'code': p.returncode}
+	return getProcessData(p)
 
 def launch(command, **KWArgs):
 	r"""Launches a process and quits without waiting for its completion.
@@ -87,8 +86,15 @@ def launch(command, **KWArgs):
 	debug(command)
 	debug(getPretty(KWArgs))
 
-	Popen(split(command), stdout=PIPE, stderr=PIPE, **KWArgs)
+	return Popen(split(command), stdout=PIPE, stderr=PIPE, **KWArgs)
 
+def getProcessData(p):
+	r"""Gets the process data from the given process. Could be used with launch, to get the processes'es output.
+	"""
+	out, err = [x.decode('utf-8') for x in p.communicate()]
+
+	return {'out': out, 'err': err, 'code': p.returncode}
+	
 class CwdSwitch:
 	r"""Helps with switching the CWD.
 	"""

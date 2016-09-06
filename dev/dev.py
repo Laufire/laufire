@@ -9,6 +9,19 @@ A module to help with develpment.
 from laufire.flow import forgive
 from laufire.extensions import pairs, isIterable
 
+# Workers
+def _getPretty(Iterable, indent):
+	ret = ''
+	
+	for key, value in pairs(Iterable):
+		if isIterable(value): #pylint: disable=W1504
+			ret += '%s%s:\n%s\n' % ('\t' * indent, key, _getPretty(value, indent + 1))
+
+		else:
+			ret += '%s%s: %s\n' % ('\t' * indent, key, value)
+
+	return ret
+
 def interactive(func, message):
 	r"""Helps with re-running tasks till there were no errors.
 	"""
@@ -39,19 +52,15 @@ def details(Obj):
 	return Obj
 
 # Makes pretty the given iterable (dictionary, list etc).
-def getPretty(Iterable, indent=0):
+def getPretty(Iterable):
 	ret = ''
+	
+	if not isIterable(Iterable):
+		return str(Iterable)
 
-	for key, value in pairs(Iterable):
-		if isIterable(value): #pylint: disable=W1504
-			ret += '%s%s:\n%s\n' % ('\t' * indent, key, getPretty(value, indent + 1))
-
-		else:
-			ret += '%s%s: %s\n' % ('\t' * indent, key, value)
-
-	return ret
+	return _getPretty(Iterable, 0)
 
 # Pretty prints the given iterable.
 def pPrint(obj):
-	print getPretty(obj, 0) if isIterable(obj) else obj
+	print getPretty(obj) if isIterable(obj) else obj
 	return obj

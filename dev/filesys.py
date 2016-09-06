@@ -74,10 +74,13 @@ def copy(sourcePath, targetPath):
 	targetPath = abspath(targetPath)
 
 	if isfile(sourcePath):
+		_removePath(targetPath) # #Note: The target is not removed unless the source is valid.
+		ensureParent(targetPath)
 		_copy(sourcePath, targetPath)
 
 	elif isContainer(sourcePath):
 		_removePath(targetPath)
+		ensureParent(targetPath)
 		copytree(sourcePath, targetPath)
 
 	else:
@@ -93,6 +96,7 @@ def makeLink(sourcePath, targetPath):
 		if isfile(targetPath):
 			unlink(targetPath)
 
+		ensureParent(targetPath)
 		link(targetPath, sourcePath)
 
 	elif isContainer(sourcePath):
@@ -102,6 +106,9 @@ def makeLink(sourcePath, targetPath):
 		elif isdir(targetPath):
 			rmtree(targetPath)
 
+		else:
+			ensureParent(targetPath)
+			
 		symlink(sourcePath, targetPath)
 
 	else:
