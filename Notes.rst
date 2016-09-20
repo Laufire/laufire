@@ -33,6 +33,12 @@ ToDo
 Pending
 -------
 
+* Fix filesys.collectPaths. It has a lot of differences from the existing glob libraries. Also try to yield paths instead of returnig them.
+
+* Setting 'logLevel' through ecstore init hooks, isn't working if the underlying logger was loaded by some other module, before initialization (this loggerd will have the default name <unnamed*).
+
+* Ensure that ecstores opened with *getStore* couldn't be corrupted, accidentally while importing.
+
 * Restructure the Config format, especially for the settings keys like **Paths** (for Gateway Config) etc.
 
 * Add a module for cryptography, especially to help with storing sensitive data on ecstore. Live hooks could be used to encrypt and decrypt the values.
@@ -154,3 +160,7 @@ Log
 	
 	* 0714	Robusted the filesys functions copy and makeLink.
 	* 1800	Added shell.getProcessData.
+
+* 160917
+
+	* 0016	Bug fixed. In filesys.collectPaths, Dirs weren't excluded based on the exclusion argument.

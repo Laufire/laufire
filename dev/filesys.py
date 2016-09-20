@@ -225,6 +225,8 @@ def collectPaths(base, Includes=None, Excludes=None, absPaths=False, regex=False
 
 		AllFiles += Files
 
+	AllDirs = [d for d in AllDirs if re.match(includes, d)]
+	
 	if not absPaths:
 		startPos = len(base) + 1
 		return [dir[startPos:] for dir in AllDirs], [file[startPos:] for file in AllFiles]

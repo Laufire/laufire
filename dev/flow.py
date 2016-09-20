@@ -31,6 +31,7 @@ def forgive(func):
 		func()
 
 	except Exception as e: #pylint: disable=W0703
+		debug(e)
 		return e
 
 def rob(func):
