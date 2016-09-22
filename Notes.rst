@@ -60,6 +60,11 @@ Later
 
 * Think of adding Project.workDir as the base work path (for file operations etc), which could save the accidental deletion of source files.
 
+Tips
+----
+
+* The config files can interpolate values from the Store.
+
 Log
 ---
 
@@ -157,10 +162,18 @@ Log
 	* 0837	Bug Fixed: filesys.makeLink wasn't working on linux.
 
 * 160906
-	
+
 	* 0714	Robusted the filesys functions copy and makeLink.
 	* 1800	Added shell.getProcessData.
 
 * 160917
 
 	* 0016	Bug fixed. In filesys.collectPaths, Dirs weren't excluded based on the exclusion argument.
+
+* 160921
+
+	* 1927	Bug fixed: In filesys.isDescendant.
+
+* 160922
+
+	* 1433	Bug fixed: In filesys.backup. Backups are done to wron targets if the CWD and the backup path differed.

@@ -12,7 +12,7 @@ from laufire.extensions import pairs, isIterable
 # Workers
 def _getPretty(Iterable, indent):
 	ret = ''
-	
+
 	for key, value in pairs(Iterable):
 		if isIterable(value): #pylint: disable=W1504
 			ret += '%s%s:\n%s\n' % ('\t' * indent, key, _getPretty(value, indent + 1))
@@ -38,7 +38,7 @@ def interactive(func, message):
 		if raw_input('Fix and continue ... (Y/n):').lower() == 'n':
 			return e
 
-def pause(message='Paused! Press return t ocontinue ...'):
+def pause(message='Paused! Press return to continue ...'):
 	raw_input(message)
 
 def peek(val):
@@ -54,11 +54,11 @@ def details(Obj):
 # Makes pretty the given iterable (dictionary, list etc).
 def getPretty(Iterable):
 	ret = ''
-	
+
 	if not isIterable(Iterable):
 		return str(Iterable)
 
-	return _getPretty(Iterable, 0)
+	return _getPretty(Iterable, 0).replace('\n\n\n', '\n\n')
 
 # Pretty prints the given iterable.
 def pPrint(obj):

@@ -162,7 +162,7 @@ def importTables(toDBPath, fromDBPath, TableNames):
 	TargetDB.commit()
 	TargetDB.close()
 
-def importTablesFromFille(toDBPath, fromFilePath, tableName=None, delimiter='\t', lineterminator='\n'):
+def importTablesFromFile(toDBPath, fromFilePath, tableName=None, delimiter='\t', lineterminator='\n'):
 	import csv
 
 	if not tableName:

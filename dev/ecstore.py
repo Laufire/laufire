@@ -1,5 +1,8 @@
 r"""A module to help with stroring validated data.
 
+#Pending: Add a way to assign variables directly (instead of getting from the user), to the leaves.
+#Later: Fix: Calling var from the command line doesn't pretty print the branches.
+#Later: Fix: Make dump to use pPrint.
 #Later: Rename the method Store.get into Store.gather or something else, to avoid confusing it with the get method of Dictionaries, as Stores also support keys, like dictionaries.
 #Later: vars could use Classes to define separate hooks for get, set etc; instead of using the current, two param function hooks. Note, add this feature, while retaining the single function hook, without commands, which is to be called on init and set.
 #Later: Think of using **with blocks** for declaration, instead of decorators, as the syntax looks cleaner. #Refer: http://stackoverflow.com/questions/1255914/finding-functions-defined-in-a-with-block

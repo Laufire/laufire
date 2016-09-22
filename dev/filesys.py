@@ -6,13 +6,15 @@ FileSys
 
 # #Note: Path removals generally require an ancestor to be specified, so to avoid accidental deletes.
 # #Note: Unlinke removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur in creating recreatable resources).
+
+#pending: Include the function prepro.helpers.linkTree.
 """
 import os
 import fnmatch
 import re
 
 from os import unlink, rmdir, sep as os_sep, makedirs
-from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, normpath, basename
+from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, normpath, basename, commonprefix
 from glob2 import glob
 from shutil import copy as _copy, copytree
 
@@ -108,7 +110,7 @@ def makeLink(sourcePath, targetPath):
 
 		else:
 			ensureParent(targetPath)
-			
+
 		symlink(sourcePath, targetPath)
 
 	else:
@@ -226,7 +228,7 @@ def collectPaths(base, Includes=None, Excludes=None, absPaths=False, regex=False
 		AllFiles += Files
 
 	AllDirs = [d for d in AllDirs if re.match(includes, d)]
-	
+
 	if not absPaths:
 		startPos = len(base) + 1
 		return [dir[startPos:] for dir in AllDirs], [file[startPos:] for file in AllFiles]
@@ -241,7 +243,9 @@ def isDescendant(probableDescendant, requiredAncestor):
 		requiredAncestor (str): The absolute path of the required ancestor.
 		probableDescendant (str): The absolute path of the probable descendant.
 	"""
-	return normpath(probableDescendant).find(normpath(requiredAncestor)  + os_sep) == 0
+	requiredAncestor = abspath(requiredAncestor)
+
+	return commonprefix([abspath(probableDescendant), requiredAncestor]) == requiredAncestor
 
 def isContainer(path):
 	return isdir(path) or isSymlink(path)
@@ -298,10 +302,15 @@ def backup(sourcePath, backupBase=None):
 
 	When backupBase isn't given the path is renamed, not moved.
 	"""
-	targetPath = '%s%s%s.bak' % (('%s/' % backupBase) if backupBase else '', basename(sourcePath), getTimeString())
-	removePath(targetPath)
+	if not backupBase:
+		backupBase = dirname(abspath(sourcePath))
+
+	targetPath = '%s_%s.bak' % (pathJoin(backupBase, basename(sourcePath)), getTimeString())
+	removePath(targetPath, backupBase)
 
 	os.rename(sourcePath, targetPath)
+
+	return targetPath
 
 # Init
 def setup(Project):
