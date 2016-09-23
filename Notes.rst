@@ -177,3 +177,7 @@ Log
 * 160922
 
 	* 1433	Bug fixed: In filesys.backup. Backups are done to wron targets if the CWD and the backup path differed.
+
+* 160923
+
+	* 1241	Redid filesys.makeLink, now it supports both hard and soft links, with soft as the default.

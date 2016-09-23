@@ -17,24 +17,33 @@ if system != 'Windows':
 
 	rmlink = unlink
 
-	def isSymlink(targetPath):
+	def isLinkedDir(targetPath):
 		return isdir(targetPath) and islink(targetPath)
 
 else:
 	from os.path import abspath
 	from win32com.shell import shell
 	from win32file import FILE_ATTRIBUTE_DIRECTORY, GetFileAttributes
-	from win32file import CreateHardLink as link, CreateSymbolicLink, RemoveDirectory as rmlink #pylint: disable=W0611
+	from win32file import CreateHardLink, CreateSymbolicLink, RemoveDirectory as rmlink #pylint: disable=W0611
 
 	# Constants
 	FILE_ATTRIBUTE_REPARSE_POINT = 1024
 	REPARSE_FOLDER = (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT)
 
 	# Exports
-	def symlink(sourcePath, targetPath):
-		CreateSymbolicLink(targetPath, sourcePath, 1)
+	def link(sourcePath, targetPath):
+		CreateHardLink(targetPath, sourcePath)
 
-	def isSymlink(targetPath):
+	def symlink(sourcePath, targetPath, linkType):
+		r"""
+		Creates a soft link for the given paths.
+
+			Args:
+				linkType: 0 for file, 1 for dir.
+		"""
+		CreateSymbolicLink(targetPath, sourcePath, linkType)
+
+	def isLinkedDir(targetPath):
 		r"""Detects whether the given path is a NTFS junction.
 
 		#Later: Fix: This call fails when the target points to an invalid location.

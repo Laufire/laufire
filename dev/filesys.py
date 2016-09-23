@@ -13,14 +13,14 @@ import os
 import fnmatch
 import re
 
-from os import unlink, rmdir, sep as os_sep, makedirs
-from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, normpath, basename, commonprefix
+from os import unlink, rmdir, makedirs
+from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, basename, commonprefix
 from glob2 import glob
 from shutil import copy as _copy, copytree
 
 from laufire.utils import getRandomString, getTimeString
 
-from laufire.helpers.filesys import link, symlink, rmlink, isSymlink
+from laufire.helpers.filesys import link, symlink, rmlink, isLinkedDir
 
 # State
 fsRoot = '.' # Risky filesystem operations such as removePath are limited to fsRoot.
@@ -38,7 +38,7 @@ def rmtree(targetPath):
 		for dir in dirs:
 			dir = pathJoin(root, dir)
 
-			if isSymlink(dir):
+			if isLinkedDir(dir):
 				rmlink(dir)
 
 			else:
@@ -50,7 +50,7 @@ def _removePath(targetPath):
 	if isfile(targetPath):
 		unlink(targetPath)
 
-	elif isSymlink(targetPath):
+	elif isLinkedDir(targetPath):
 		rmlink(targetPath)
 
 	elif isdir(targetPath):
@@ -88,30 +88,22 @@ def copy(sourcePath, targetPath):
 	else:
 		raise Exception('Invalid source path: %s' % sourcePath)
 
-def makeLink(sourcePath, targetPath):
+def makeLink(sourcePath, targetPath, isHard=False):
 	r"""Links two paths. Files are hard linked, where as dirs are linked as junctions.
 	"""
 	sourcePath = abspath(sourcePath)
 	targetPath = abspath(targetPath)
 
 	if isfile(sourcePath):
-		if isfile(targetPath):
-			unlink(targetPath)
-
+		_removePath(targetPath)
 		ensureParent(targetPath)
-		link(targetPath, sourcePath)
+		(link if isHard else symlink)(sourcePath, targetPath, linkType=0)
 
 	elif isContainer(sourcePath):
-		if isSymlink(targetPath):
-			rmlink(targetPath)
+		_removePath(targetPath)
+		ensureParent(targetPath)
 
-		elif isdir(targetPath):
-			rmtree(targetPath)
-
-		else:
-			ensureParent(targetPath)
-
-		symlink(sourcePath, targetPath)
+		symlink(sourcePath, targetPath, linkType=1) # #Note: Dirs can't be hard-linked.
 
 	else:
 		raise Exception('Invalid source path: %s' % sourcePath)
@@ -248,12 +240,12 @@ def isDescendant(probableDescendant, requiredAncestor):
 	return commonprefix([abspath(probableDescendant), requiredAncestor]) == requiredAncestor
 
 def isContainer(path):
-	return isdir(path) or isSymlink(path)
+	return isdir(path) or isLinkedDir(path)
 
 def getPathType(path):
 	ret = 0
 
-	for func in [isfile, isdir, isSymlink]:
+	for func in [isfile, isdir, isLinkedDir]:
 		ret += 1
 
 		if func(path):
