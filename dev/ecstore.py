@@ -1,6 +1,5 @@
 r"""A module to help with stroring validated data.
 
-#Pending: Add a way to assign variables directly (instead of getting from the user), to the leaves.
 #Later: Fix: Calling var from the command line doesn't pretty print the branches.
 #Later: Fix: Make dump to use pPrint.
 #Later: Rename the method Store.get into Store.gather or something else, to avoid confusing it with the get method of Dictionaries, as Stores also support keys, like dictionaries.
@@ -76,23 +75,26 @@ def getConfigsFromDict(Dict, branch, Buffer):
 		else:
 			Buffer['Values'][route] = value
 
-def processCollected(Dict, branch, Buffer):
-	for key, Value in Dict.iteritems():
-		Children = Value.get('Children', None)
+def processCollected(Collected, branch, Buffer):
+	for key, Item in Collected.iteritems():
+		Children = Item.get('Children', None)
 
 		route = getRoute(branch, key)
 
 		if Children is not None: # We've got a branch.
-			Config = Value['Config']
+			Config = Item['Config']
 			Buffer['Configs'][route] = Config
 			Config['Routes'] = [getRoute(route, k) for k in Children]
 			processCollected(Children, route, Buffer)
 
-		elif 'Data' in Value: # We've got a data dictionary.
-			getConfigsFromDict(Value['Data'], route, Buffer)
+		elif 'Data' in Item: # We've got a data dictionary.
+			getConfigsFromDict(Item['Data'], route, Buffer)
+
+		elif 'value' in Item: # We've got a read-only value.
+			Buffer['Values'][route] = Item['value']
 
 		else: # We've got a var.
-			Buffer['Configs'][route] = Value
+			Buffer['Configs'][route] = Item
 
 def getStoreTable(Config):
 	filePath = Config['filePath']
@@ -155,11 +157,16 @@ class ReadOnlyStore:
 			currentRoute = Routes.pop(0)
 			branch, leaf = split(currentRoute)
 
-			if not leaf or Values.get(branch): # The route points to the root or an existing branch.
+			if not leaf: # The route points to the root, hence skip processing it to avoid infinite looping.
 				continue
 
-			Values[branch] = {'Routes': [route for route in Routes if getBranch(route) == branch] + [currentRoute]}
-			Routes.append(branch)
+			Branch = Values.get(branch)
+
+			if not Branch:
+				Values[branch] = Branch = {'Routes': []}
+				Routes.append(branch)
+
+			Branch['Routes'].append(currentRoute)
 
 	def __getitem__(self, route):
 		return self.var(route)
@@ -262,9 +269,14 @@ class ConfiguredStore:
 				print '%s: %s' % (route, self._Values[route])
 
 	def get(self, route, overwrite=False):
-		Config = self._Configs[route]
-		Routes = Config.get('Routes')
 		prefix = '  ' * route.count('/')
+		Config = self._Configs.get(route)
+
+		if not Config: # We've got a read only value.
+			print '%s%s: %s' % (prefix, getLeaf(route), self._Values[route])
+			return
+
+		Routes = Config.get('Routes')
 
 		if Routes:
 			name = Config.get('name')
@@ -375,7 +387,7 @@ def var(hook=None, **Config):
 		name = getName(hook, Config)
 		ret = hook
 
-	else: # We've got a simple value or a decorator for hook.
+	else: # We've got a simple value or a decorator of a hook.
 		name = Config.get('name', None)
 		ret = lambda hook, **dummy: var(hook, **State.pop()[1]) # If the lambda is called, then it would be by the passing of the hook.
 
@@ -385,12 +397,10 @@ def var(hook=None, **Config):
 
 ## Config Functions
 def parse(filePath, format=None):
-	r"""Adds parsed data to the Store.
+	r"""Adds parsed data to the Store, in read-only mode.
 
 	Args:
 		Check parser.parse.
-
-	#Note: Parsed data can't be written back ans won't be available on the dumps. The idea behind the function is to making data access easier, by unifiying the configuration.
 	"""
 	if not exists(filePath):
 		raise Exception('No such file: %s' % filePath)
@@ -399,6 +409,15 @@ def parse(filePath, format=None):
 	ret = lambda x: x # #Note: The lambda serves as an object marker for the assigned value, during child collection.
 
 	State.append((None, {'Data': Parsed}, ret,))
+
+	return ret
+
+def value(val):
+	r"""Adds a simple read-only value to the store.
+	"""
+	ret = lambda x: x # #Note: The lambda serves as an object marker for the assigned value, during child collection.
+
+	State.append((None, {'value': val}, ret,))
 
 	return ret
 
