@@ -183,3 +183,7 @@ Log
 	* 1241	Redid filesys.makeLink, now it supports both hard and soft links, with soft as the default.
 	* 1700	Bug fixed: In ecstore.ReadOnlyStore. The processing of the routes was buggy.
 	* 1834	Added ecstore.value, to have read-only values.
+
+* 160924
+
+	* 0026	Bug fixed: in filesys.makeLink, the implementation was buggy.

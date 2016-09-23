@@ -97,13 +97,13 @@ def makeLink(sourcePath, targetPath, isHard=False):
 	if isfile(sourcePath):
 		_removePath(targetPath)
 		ensureParent(targetPath)
-		(link if isHard else symlink)(sourcePath, targetPath, linkType=0)
+		(link if isHard else symlink)(sourcePath, targetPath)
 
 	elif isContainer(sourcePath):
 		_removePath(targetPath)
 		ensureParent(targetPath)
 
-		symlink(sourcePath, targetPath, linkType=1) # #Note: Dirs can't be hard-linked.
+		symlink(sourcePath, targetPath) # #Note: Dirs can't be hard-linked.
 
 	else:
 		raise Exception('Invalid source path: %s' % sourcePath)

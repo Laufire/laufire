@@ -21,7 +21,7 @@ class SQLiteDB:
 		Note:
 			The calss handles a single DB and allows only a single cursor over a single connection.
 		"""
-		self._inited = False # Used to break getattr chains, that ocuur on connection opening errors.
+		self._inited = False # Used to break getattr chains, that occur on connection opening errors.
 
 		self.path = filePath
 		self._conn = sqlite3.connect(self.path)
