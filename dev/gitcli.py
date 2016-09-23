@@ -12,6 +12,7 @@ Notes:
 """
 from subprocess import Popen, PIPE
 from shlex import split
+from os.path import abspath
 
 # Helpers
 def call(command, **kwargs): # from gitapi.py
@@ -53,50 +54,53 @@ def lines(commandStr, cwd='.'):
 	return out.split('\n') if out else []
 
 ## Info
-def isClean(dir=None):
+def isClean(dir='.'):
 	r"""Ensures that the given dir doesn't have any uncommited changes.
 	"""
-	return getStdout('status "%s" --porcelain' % (dir or getRepoPath())) == ''
+	cwd = getRepoPath(dir)
+	dir = abspath(dir)
 
-def getCommitMessage():
+	return getStdout('status "%s" --porcelain' % dir, cwd=cwd) == ''
+
+def getCommitMessage(dir='.'):
 	r"""Returns the commit message of the last commit of the current branch.
 	"""
-	return getStdout('log -1 --pretty=%B').strip()
+	return getStdout('log -1 --pretty=%B', cwd=dir).strip()
 
-def getCommmitId():
+def getCommmitId(dir='.'):
 	r"""Returns the commit id of the last commit of the current branch.
 	"""
-	return getStdout('rev-parse HEAD').strip()
+	return getStdout('rev-parse HEAD', cwd=dir).strip()
 
-def getCurrentBranch():
+def getCurrentBranch(dir='.'):
 	r"""Returns the name of the current branch.
 	"""
-	return getStdout('rev-parse --abbrev-ref HEAD').strip()
+	return getStdout('rev-parse --abbrev-ref HEAD', cwd=dir).strip()
 
 def getFileList(dir='.'):
 	r"""Returns the list of gitted files under the given dir.
 	"""
 	return getStdout('ls-files', cwd=dir).split('\n')
 
-def getRepoPath():
-	return getStdout('rev-parse --show-toplevel').strip()
+def getRepoPath(dir='.'):
+	return getStdout('rev-parse --show-toplevel', cwd=dir).strip()
 
-def isExportable():
+def isExportable(dir='.'):
 	r"""Ensures that the current state of the repo is clean and of the master branch.
 	"""
-	return isClean(getRepoPath()) and getCurrentBranch() == 'master'
+	return isClean(getRepoPath(dir)) and getCurrentBranch(dir) == 'master'
 
 # Tagging
-def getTags(pattern=None):
+def getTags(pattern=None, dir='.'):
 	r"""Returns the list of tags from the current branch.
 	"""
-	return lines('tag%s' % ('' if not pattern else ' -l "%s"' % pattern))
+	return lines('tag%s' % ('' if not pattern else ' -l "%s"' % pattern), cwd=dir)
 
-def addTag(tagName, tgtTreeish=None):
-	getStdout('tag "%s"%s' % (tagName, '' if not tgtTreeish else (' "%s"' % tgtTreeish)))
+def addTag(tagName, tgtTreeish=None, dir='.'):
+	getStdout('tag "%s"%s' % (tagName, '' if not tgtTreeish else (' "%s"' % tgtTreeish)), cwd=dir)
 
-def deleteTag(tagName):
-	getStdout('tag -d "%s"' % tagName)
+def deleteTag(tagName, dir='.'):
+	getStdout('tag -d "%s"' % tagName, cwd=dir)
 
 ## Utilities
 def archive(archiveTarget, pathToArchive='.', treeish='HEAD'):
