@@ -176,7 +176,7 @@ Log
 
 * 160922
 
-	* 1433	Bug fixed: In filesys.backup. Backups are done to wron targets if the CWD and the backup path differed.
+	* 1433	Bug fixed: In filesys.backup. Backups are done to wrong targets if the CWD and the backup path differed.
 
 * 160923
 

@@ -150,7 +150,6 @@ class ReadOnlyStore:
 		Store.close()
 
 		Routes = Values.keys()
-		Routes.sort(lambda x, y: cmp(len(x), len(y)) * -1) # Sort the Routes, descending by length, so that chidren would be processed before parents, thus speeding up the process.
 
 		# Add branch configs.
 		while Routes:

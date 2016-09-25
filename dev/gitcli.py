@@ -67,10 +67,10 @@ def getCommitMessage(dir='.'):
 	"""
 	return getStdout('log -1 --pretty=%B', cwd=dir).strip()
 
-def getCommmitId(dir='.'):
+def getCommitID(dir='.', short=0):
 	r"""Returns the commit id of the last commit of the current branch.
 	"""
-	return getStdout('rev-parse HEAD', cwd=dir).strip()
+	return getStdout('rev-parse %s HEAD' % (('--short=%s' % short) if short else ''), cwd=dir).strip()
 
 def getCurrentBranch(dir='.'):
 	r"""Returns the name of the current branch.

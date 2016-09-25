@@ -3,6 +3,7 @@ A module to help with debelopment.
 """
 import json
 
+from laufire.dev import getPretty
 from laufire.filesys import copy, ensureParent
 from laufire.logger import debug
 from laufire.shell import call, debugCall, assertShell
@@ -17,12 +18,15 @@ class SSHBridgeMocker:
 		MockConfig = Config['Gateway']['Mock']
 		self.GatewayConfig = Config['Gateway']
 		self.mockScriptTpl = MockConfig['scriptTemplate']
-		self.mockBase = MockConfig['base']
+		self.mockBase = MockConfig['gateway']
 
 	def callScript(self, ecCommand):
 		out = assertShell(call(self.mockScriptTpl % ecCommand, cwd=self.mockBase))
-		debug(out)
-		return json.loads(out) if out else None
+
+		if out:
+			Out =	json.loads(out)
+			debug(getPretty(Out))
+			return Out
 
 	def debugScript(self, ecCommand):
 		r"""Helps with debugging the gateway scripts.
