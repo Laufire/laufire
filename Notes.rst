@@ -188,3 +188,8 @@ Log
 
 	* 0026	Bug fixed: in filesys.makeLink, the implementation was buggy.
 	* 0330	Improved path handling in the module, gitcli.
+
+* 160925
+
+	* 1935	Project files now support two new options, **cwd** and **Paths**.
+	* 1950	Tuned the module, YamlEx.

@@ -11,6 +11,8 @@ A wrapper around HiYaPyCo that supports:
 from hiyapyco import HiYaPyCo, dump, odyldo
 from jinja2 import Template
 
+from .extensions import merge
+
 # #Later: Make YamlEx to inherit 'dict', so that it could support all the functionalities of a dict.
 class YamlEx:
 	r"""The wrapper class.
@@ -23,47 +25,54 @@ class YamlEx:
 			FilePaths = None
 
 		self.HiYaPyCo = H = HiYaPyCo(*FilePaths, **KWArgs) if FilePaths else HiYaPyCo('---\n{}', **KWArgs) # return an empty object when no file is mentioned.
-		self.data = H._data #pylint: disable=W0212
+		self.Data = H._data #pylint: disable=W0212
 
-	def setData(self, data):
-		r"""Explicitly sets self.data.
+	def __get_item__(self, key):
+		return self.Data[key]
+
+	def setData(self, Data):
+		r"""Explicitly sets self.Data.
 
 		Note:
 			An explicit set method is used instead of getters and setters, as the way to implement them in this context coudn't be found (@property + new style classes, meddles with __getitem__).
 		"""
-		self.data = data
-		self.HiYaPyCo._data = data #pylint: disable=W0212
+		self.Data = Data
+		self.HiYaPyCo._data = Data #pylint: disable=W0212
 
 		return self
 
 	def interpolate(self):
 		r"""Does the interpolation.
 		"""
-		self.HiYaPyCo._interpolate(self.data) #pylint: disable=W0212
+		self.HiYaPyCo._interpolate(self.Data) #pylint: disable=W0212
 		return self
 
-	def load(self, filePath):
+	def load(self, filePath, interpolate=True):
 		r"""Loads data from the given YAML file.
 
 		Args:
 			filePath (str): A path to a valid YAML file.
 		"""
-		self.data.update(odyldo.safe_load(open(filePath, 'r')))
+		self.setData(merge(self.Data, odyldo.safe_load(open(filePath, 'r'))))
+
+		if interpolate:
+			self.interpolate()
+
 		return self
 
 	def dump(self, defaultFlowStyle=True):
 		r"""Returns the YAML dump.
 		"""
-		return dump(self.data, defaultFlowStyle)
+		return dump(self.Data, defaultFlowStyle)
 
 	def render(self, tmplStr):
 		r"""Renders the given template.
 		"""
-		return Template(tmplStr).render(self.data)
+		return Template(tmplStr).render(self.Data)
 
-	# Allow access to the underlying dictionary attrs, this also will allow access to the keys of self.data.
+	# Allow access to the underlying dictionary attrs, this also will allow access to the keys of self.Data.
 	def __getattr__(self, attr):
-		return getattr(self.data, attr)
+		return getattr(self.Data, attr)
 
 def overlayHiYaPyCo():
 	import hiyapyco

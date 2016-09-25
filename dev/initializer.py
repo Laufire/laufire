@@ -3,8 +3,6 @@ initializer
 ===========
 
 	Intializes the Project and gives it the Config.
-
-#Note: A project option ensureCWD is thought, but was skipped from being added, as the Project file itself, won't be resolced if the CWD isn't right.
 """
 # State
 Project = None
@@ -19,6 +17,24 @@ def getAttrDict(Obj, *Attrs):
 
 	return Ret
 
+def setCWD(cwd):
+	if cwd:
+		from os import chdir
+
+		chdir(cwd)
+
+def addPaths(Paths):
+	r"""Adds additional paths for module lookup.
+	"""
+	if Paths:
+		from sys import path
+		from os.path import abspath
+
+		Paths.reverse()
+
+		for item in Paths:
+			path.insert(0, abspath(item))
+
 def collectConfigData(Attrs):
 	r"""Collects the config from various sources and builds the Config.
 	"""
@@ -29,7 +45,7 @@ def collectConfigData(Attrs):
 
 	Config = YamlEx(configPath, loglevel='ERROR') if configPath else YamlEx(loglevel='ERROR')
 
-	Data = Config.data
+	Data = Config.Data
 
 	if 'ConfigExtensions' in Attrs:
 		Data = merge(Data, Attrs['ConfigExtensions'])
@@ -42,10 +58,8 @@ def collectConfigData(Attrs):
 
 	return Config
 
-def silenceLoggers(Attrs):
+def silenceLoggers(LoggerNames):
 	# #Later: Fix: Logging seems not to be silenced.
-
-	LoggerNames = Attrs.get('LoggersToSilence')
 
 	if not LoggerNames:
 		return
@@ -97,14 +111,20 @@ def init():
 	global Project
 	Project = _Project
 
-	Attrs = getAttrDict(Project, 'configPath', 'ConfigExtensions', 'Store', 'LoggersToSilence')
+	Attrs = getAttrDict(Project, 'cwd', 'Paths', 'configPath', 'ConfigExtensions', 'Store', 'LoggersToSilence')
 
-	silenceLoggers(Attrs) # #Later: Think of silencing every other log, than that of the project or those that are excluded.
+	setCWD(Attrs.get('cwd'))
 
-	Project.Config = collectConfigData(Attrs)
+	setCWD(addPaths(Attrs.get('Paths')))
+
+	silenceLoggers(Attrs.get('LoggersToSilence')) # #Later: Think of silencing every other log, than that of the project or those that are excluded.
+
+	Project.Config = Config = collectConfigData(Attrs)
 
 	addDefaults()
 
 	addDevBuiltins()
 
 	setSettings()
+
+	return Config
