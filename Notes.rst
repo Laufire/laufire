@@ -193,3 +193,7 @@ Log
 
 	* 1935	Project files now support two new options, **cwd** and **Paths**.
 	* 1950	Tuned the module, YamlEx.
+
+* 160927
+
+	* 2320	Added the module, tools.
