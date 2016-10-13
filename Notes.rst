@@ -197,3 +197,7 @@ Log
 * 160927
 
 	* 2320	Added the module, tools.
+
+* 161011
+
+	* 0820	Bug Fixed: extensions.flatten wasn't behaving as exepected. When resoving, made it support both recrsive and vanila flatten, through an extra argument, recursive.

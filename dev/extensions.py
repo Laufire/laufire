@@ -28,7 +28,7 @@ def namespace(wrapper):
 		returned.__dict__.update(wrapper.__dict__)
 
 		return returned
-		
+
 def isIterable(obj):
 	return hasattr(obj, 'iteritems') or hasattr(obj, '__iter__')
 
@@ -42,7 +42,7 @@ def values(Iterable):
 	"""
 	return Iterable.values() if hasattr(Iterable, 'values') else Iterable
 
-def flatten(Iterable):
+def flatten(Iterable, recurse=False):
 	r"""Collects all the values from the given iterable.
 
 	#From: http://stackoverflow.com/questions/13490963/how-to-flatten-a-nested-dictionary-in-python-2-7x
@@ -51,10 +51,10 @@ def flatten(Iterable):
 
 	for v in values(Iterable):
 		if isIterable(v):
-			for item in flatten(v):
-				l += item
+			for item in (flatten(v) if recurse else values(v)):
+				l.append(item)
 		else:
-			l += v
+			l.append(v)
 
 	return l
 
