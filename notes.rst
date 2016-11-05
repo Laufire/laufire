@@ -214,3 +214,7 @@ Log
 * 161025
 
 	* 1027	Added filesys.restore.
+
+* 161105
+
+	* 2324	Added the module crypto, to help with basic string encryption and decryption.
