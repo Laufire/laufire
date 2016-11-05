@@ -8,7 +8,11 @@ Logger = logging.getLogger('<unnamed>')
 # Exports
 __all__ = ['log', 'logError', 'debug']
 
+# Data
 BRED = '%s%s' % (Style.BRIGHT, Fore.RED) #pylint: disable=E1101
+
+# State
+Supressed = []
 
 def log(message, color=None):
 	r"""Facilitates colored logging.
@@ -20,7 +24,11 @@ def logError(message):
 	"""
 	Logger.error('%s%s\n' % (BRED, message)) #pylint: disable=W1201
 
-debug = Logger.debug
+def debug(message):
+	if Logger.level > 10:
+		Supressed.append(message) #Pending: Add a max-size setting for the Buffer.
+
+	Logger.debug(message)
 
 def setLevel(lvl):
 	r"""Sets the level of the Logger.

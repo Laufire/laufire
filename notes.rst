@@ -201,3 +201,16 @@ Log
 * 161011
 
 	* 0820	Bug Fixed: extensions.flatten wasn't behaving as exepected. When resoving, made it support both recrsive and vanila flatten, through an extra argument, recursive.
+
+* 161014
+
+	* 1013	Added osbridge.getOSRoot
+	* 1013	Added osbridge.getDataFolder is now, osbridge.getDataDir.
+
+* 161023
+
+	* 1835	Supressed debug messages are now accesbile through logger.Supressed. This is to aid debugging.
+
+* 161025
+
+	* 1027	Added filesys.restore.

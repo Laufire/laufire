@@ -7,14 +7,14 @@ FileSys
 # #Note: Path removals generally require an ancestor to be specified, so to avoid accidental deletes.
 # #Note: Unlinke removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur in creating recreatable resources).
 
-#pending: Include the function prepro.helpers.linkTree.
+#Pending: Include the function prepro.helpers.linkTree.
 """
 import os
 import fnmatch
 import re
 
 from os import unlink, rmdir, makedirs
-from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, basename, commonprefix
+from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, basename, commonprefix, splitext
 from glob2 import glob
 from shutil import copy as _copy, copytree
 
@@ -289,7 +289,7 @@ def extract(sourcePath, targetPath): # #Note: The tagertPath points to the extra
 	with ZipFile(sourcePath, 'r') as Z:
 		Z.extractall(targetPath)
 
-def backup(sourcePath, backupBase=None):
+def backup(sourcePath, backupBase=None, addTimeString=True):
 	r"""Backs up the given path.
 
 	When backupBase isn't given the path is renamed, not moved.
@@ -297,12 +297,19 @@ def backup(sourcePath, backupBase=None):
 	if not backupBase:
 		backupBase = dirname(abspath(sourcePath))
 
-	targetPath = '%s_%s.bak' % (pathJoin(backupBase, basename(sourcePath)), getTimeString())
+	targetPath = '%s%s.bak' % (pathJoin(backupBase, basename(sourcePath)), ('%s.' % getTimeString()) if addTimeString else '')
 	removePath(targetPath, backupBase)
 
 	os.rename(sourcePath, targetPath)
 
 	return targetPath
+
+def restore(backupPath, sourcePath=None): #Pending: Add a way to handle time strings. Better yet a make calss for backup (may be as a separate module).
+	if not sourcePath:
+		sourcePath = splitext(backupPath)[0]
+
+	removePath(sourcePath)
+	os.rename(backupPath, sourcePath)
 
 # Init
 def setup(Project):
