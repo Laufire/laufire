@@ -90,6 +90,12 @@ def merge(*Dicts):
 
 	return Ret
 
+def select(Dict, Keys):
+	r"""
+	Returns a sub-dictionary of the given Dict with the given keys.
+	"""
+	return {k: Dict[k] for k in Keys}
+
 def walk(Iterable, RouteParts=None):
 	if RouteParts is None:
 		RouteParts = [None]

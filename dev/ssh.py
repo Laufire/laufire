@@ -25,6 +25,9 @@ def expandPath(path, homeDir):
 	return sub(homeDirPatern, '%s/' % homeDir, path)
 
 def _upload(SFTP, localPath, remotePath):
+
+	debug('uploading %s to %s' % (localPath, remotePath))
+
 	pathType = getPathType(localPath)
 
 	if pathType == 1: # file
@@ -76,7 +79,7 @@ def getTgtName(tgtName, srcPath):
 	return tgtName if tgtName else basename(srcPath)
 
 class SSHClient(paramiko.SSHClient):
-	r"""Bridges with the SSH gateway of the remote host.
+	r"""An abstraction layer over the SSH client.
 	"""
 	def __init__(self, SSHConfig):
 		paramiko.SSHClient.__init__(self)
@@ -105,6 +108,7 @@ class SSHClient(paramiko.SSHClient):
 		SFTP.close()
 
 	def upload(self, localPath, remotePath):
+		remotePath = getTgtName(remotePath, localPath)
 		debug('uploading %s to %s' % (localPath, remotePath))
 		SFTP = self.open_sftp()
 		_upload(SFTP, localPath, expandPath(remotePath, self._homeDir))
@@ -127,7 +131,7 @@ class SSHClient(paramiko.SSHClient):
 		}
 
 class SSHBridge:
-	r"""An abstraction layer over the SSH client.
+	r"""Bridges with the SSH gateway of the remote host.
 	"""
 	def __init__(self, Config):
 		self.GatewayConfig = Config['Gateway']

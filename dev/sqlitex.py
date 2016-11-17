@@ -1,5 +1,7 @@
 import sqlite3
 
+# #Pending: Raise exceptions on constraint failures etc.
+
 # Helpers
 def dictFactory(cursor, row):
 	d = {}

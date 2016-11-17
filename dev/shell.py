@@ -51,15 +51,14 @@ def piped(*Commands, **KWArgs):
 	debug(getPretty(KWArgs))
 
 	out = None
-	err = ''
+	err = None
 	code = 0
 
 	for command in Commands:
 		debug(getPretty(command))
 
 		p = Popen(split(command), stdout=PIPE, stderr=PIPE, stdin=PIPE, **KWArgs)
-		out, err = [x.decode('utf-8') for x in p.communicate(out)]
-
+		out, err = p.communicate(out)
 		code = p.returncode
 
 		if code:
@@ -94,7 +93,7 @@ def getProcessData(p):
 	out, err = [x.decode('utf-8') for x in p.communicate()]
 
 	return {'out': out, 'err': err, 'code': p.returncode}
-	
+
 class CwdSwitch:
 	r"""Helps with switching the CWD.
 	"""

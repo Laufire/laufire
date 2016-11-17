@@ -218,3 +218,10 @@ Log
 * 161105
 
 	* 2324	Added the module crypto, to help with basic string encryption and decryption.
+
+* 161117
+
+	* 0733	Added filesys.ensureDir.
+	* 1610	Added extensions.select.
+	* 2030	Improved shell.pipe.
+	* 2030	Bug fixed: filesys.collectPaths wasn't traversing symlinks on Linux.

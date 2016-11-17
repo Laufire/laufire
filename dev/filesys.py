@@ -135,6 +135,12 @@ def ensureParent(childPath):
 	if not exists(parentPath):
 		makedirs(parentPath)
 
+def ensureDir(dir):
+	r"""Ensures that the given dir is available.
+	"""
+	if not exists(dir):
+		makedirs(dir)
+
 def ensureCleanDir(dir, requiredAncestor=None):
 	r"""Ensures that the given dir is clean and available.
 	"""
@@ -180,7 +186,7 @@ def expandGlobs(rootPath, *Patterns):
 
 	return Paths
 
-def collectPaths(base, Includes=None, Excludes=None, absPaths=False, regex=False):
+def collectPaths(base, Includes=None, Excludes=None, absPaths=False, regex=False, followlinks=True):
 	r"""Returns two lists containing dirs and files of the given base dir.
 
 	Args:
@@ -206,7 +212,7 @@ def collectPaths(base, Includes=None, Excludes=None, absPaths=False, regex=False
 
 	base = base.replace('\\', '/')
 
-	for root, Dirs, Files in os.walk(base):
+	for root, Dirs, Files in os.walk(base, followlinks=followlinks):
 
 		# Exclude dirs.
 		Dirs[:] = [d for d in Dirs if not re.match(excludes, d)]
@@ -269,7 +275,7 @@ def compress(sourcePath, targetPath): # #Note: shutil.make_archive isn't used du
 	if isContainer(sourcePath):
 		os.chdir(sourcePath)
 
-		for root, dummy1, Files in os.walk('.'):
+		for root, dummy1, Files in os.walk('.', followlinks=True):
 			for file in Files:
 				ZipFileObj.write(pathJoin(root, file))
 
