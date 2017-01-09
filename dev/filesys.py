@@ -5,7 +5,7 @@ FileSys
 	A module to help with files system operations.
 
 # #Note: Path removals generally require an ancestor to be specified, so to avoid accidental deletes.
-# #Note: Unlinke removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur in creating recreatable resources).
+# #Note: Unlike removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur in creating recreatable resources).
 
 #Pending: Include the function prepro.helpers.linkTree.
 """
@@ -24,6 +24,9 @@ from laufire.helpers.filesys import link, symlink, rmlink, isLinkedDir
 
 # State
 fsRoot = '.' # Risky filesystem operations such as removePath are limited to fsRoot.
+
+# Data
+Ext2Opener = {'zip': ('zipfile', 'ZipFile'), 'gz': 'gzip'} # #Pending: Instead of having module, object pairs import objects (for that write a support module. ie: import_obj('zipfile.ZipFile')
 
 # Helpers
 def rmtree(targetPath):
@@ -58,6 +61,21 @@ def _removePath(targetPath):
 
 	else:
 		return 1 # error
+
+def _getOpener(ext):
+	opener = Ext2Opener.get(ext)
+
+	if opener:
+		from importlib import import_module
+
+		if hasattr(opener, 'upper'): # Only a module name is available.
+			return import_module(opener).open
+
+		else: # a module name and object name pair is available.
+			return lambda filePath: getattr(import_module(opener[0]), opener[1])(filePath).open
+
+	else:
+		return lambda filePath: open(filePath, 'rb')
 
 # Exports
 def resolve(basePath, relation):
@@ -169,6 +187,32 @@ def setContent(filePath, content):
 	with open(filePath, 'wb') as file:
 		file.write(content)
 
+def getLines(filePath, start=-1, end=-1, ext=None, Args=None):
+	r"""Yields lines from various file formats like zip, gzip etc.
+	"""
+	if not ext:
+		ext = splitext(filePath)[1]
+
+	n = 0
+
+	if end < 0:
+		end = float('inf')
+
+	else:
+		end += 2
+
+	opener = _getOpener(ext.lower()[1:])(filePath)
+
+	for line in opener if not Args else opener(*Args):
+		n += 1
+
+		if n > start:
+			if n < end:
+				yield line
+
+			else:
+				break
+
 def expandGlobs(rootPath, *Patterns):
 	r"""Expands a set of patterns for a given rootPath.
 
@@ -259,7 +303,7 @@ def getPathType(path):
 
 	return ret
 
-def compress(sourcePath, targetPath): # #Note: shutil.make_archive isn't used due to it forcing the zip extension and due to the need for maintaing a compression standard.
+def compress(sourcePath, targetPath): # #Note: shutil.make_archive isn't used, due to its forcing of the zip extension and due to the need for maintaing a compression standard.
 	if not exists(sourcePath):
 		raise('No such path: %s' % sourcePath)
 

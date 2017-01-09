@@ -3,15 +3,20 @@ r"""A module to help reading and writing TSV (tab separated files).
 #Note: TSV is chosen over CSV for their simplicity.
 """
 import csv
+from os.path import exists
 
 class TSV:
-	def __init__(self, filePath=None, mode='dict'):
+	def __init__(self, filePath=None, mode='dict', createMissingFile=False): # #Note: Mode could be set to 'list' to handle data as list of lists.
 		r"""
 		A simple class to help with reading and writing TSV files.
 		"""
 		self._file = None
 
 		if filePath:
+			if createMissingFile and not exists(filePath):
+				file = open(filePath, 'wb+')
+				file.close()
+
 			self.open(filePath, mode)
 
 	def open(self, filePath, mode='dict'):

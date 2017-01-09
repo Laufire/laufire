@@ -225,3 +225,15 @@ Log
 	* 1610	Added extensions.select.
 	* 2030	Improved shell.pipe.
 	* 2030	Bug fixed: filesys.collectPaths wasn't traversing symlinks on Linux.
+
+* 161227
+
+	* 1600	Added dev.plot.
+
+* 170105
+
+	* 2321	Added an argument, createMissingFile to tsv.TSV's constructor.
+
+* 170110
+
+	* 0232	Added filesys.getLines.

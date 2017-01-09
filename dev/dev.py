@@ -64,3 +64,12 @@ def getPretty(Iterable):
 def pPrint(obj):
 	print getPretty(obj) if isIterable(obj) else obj
 	return obj
+
+# Plots the given list of numbers.
+def plot(Values):
+	import matplotlib.pyplot as plt
+
+	plt.plot(Values)
+	plt.grid(True)
+
+	plt.show()
