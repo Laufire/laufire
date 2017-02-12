@@ -6,22 +6,28 @@ A module to control the flow of the application.
 """
 from time import sleep
 
-from laufire.logger import debug
+from laufire.logger import debug, log
 
 defaultDelay = 0
 tickTime = 0.1
 
-def waitFor(func, maxWait=None):
+def waitFor(func, maxWait=None, message=None):
 	r"""Waits for the given function to return a truthy or until a set time.
 	"""
 	waited = 0
 	maxWait = maxWait or defaultDelay
+
+	if message:
+		log(message)
 
 	while not func():
 		waited += tickTime
 
 		if waited > maxWait:
 			raise Exception('Maximum wait time exceded.')
+
+		if message:
+			debug(message)
 
 		debug('Waited: %d, MaxWait: %d.' % (waited, maxWait))
 		sleep(tickTime)

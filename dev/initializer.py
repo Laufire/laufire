@@ -38,7 +38,6 @@ def addPaths(Paths):
 def collectConfigData(Attrs):
 	r"""Collects the config from various sources and builds the Config.
 	"""
-	from laufire.extensions import merge
 	from laufire.yamlex import YamlEx
 
 	configPath = Attrs.get('configPath')
@@ -48,12 +47,11 @@ def collectConfigData(Attrs):
 	Data = Config.Data
 
 	if 'ConfigExtensions' in Attrs:
-		Data = merge(Data, Attrs['ConfigExtensions'])
+		Config.extend(Attrs['ConfigExtensions'])
 
 	if 'Store' in Attrs:
-		Data = merge(Data, Attrs['Store'].var(''))
+		Config.extend(Attrs['Store'].var(''))
 
-	Config.setData(Data)
 	Config.interpolate()
 
 	return Config

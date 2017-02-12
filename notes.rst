@@ -30,6 +30,8 @@ ToDo
 
 * Try the package on linux.
 
+* Replace YamlEx with a generic dictionary (ordered) dictionary templater, so to allow using other data formats for interpolation.
+
 Pending
 -------
 
@@ -237,3 +239,7 @@ Log
 * 170110
 
 	* 0232	Added filesys.getLines.
+
+* 170217
+
+	* 1533	Added YamlEx.extend.

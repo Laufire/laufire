@@ -4,6 +4,7 @@ dev
 
 A module to help with develpment.
 
+#ToDo: Ensure that unicode's are handled well by get pretty.
 #Later: Think of adding some functions, like scan, to the built-ins, so that there can be used without importing.
 """
 from laufire.flow import forgive
@@ -15,12 +16,12 @@ def _getPretty(Iterable, indent):
 
 	for key, value in pairs(Iterable):
 		if isIterable(value): #pylint: disable=W1504
-			ret += '%s%s:\n%s\n' % ('\t' * indent, key, _getPretty(value, indent + 1))
+			ret += u'%s%s:\n%s\n' % (u'\t' * indent, unicode(key), _getPretty(value, indent + 1))
 
 		else:
-			ret += '%s%s: %s\n' % ('\t' * indent, key, value)
+			ret += u'{0}{1}: {2}\n'.format(u'\t' * indent, unicode(key), unicode(value))
 
-	return ret
+	return ret.encode('utf-8')
 
 def interactive(func, message):
 	r"""Helps with re-running tasks till there were no errors.

@@ -41,6 +41,18 @@ class YamlEx:
 
 		return self
 
+	def extend(self, DataToMerge):
+		r"""
+		Extends the existing data by merging it with the given data.
+		"""
+		from laufire.extensions import merge
+
+		Data = merge(self.Data, DataToMerge)
+		self.Data = Data
+		self.HiYaPyCo._data = Data #pylint: disable=W0212
+
+		return self
+
 	def interpolate(self):
 		r"""Does the interpolation.
 		"""

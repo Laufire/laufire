@@ -68,7 +68,9 @@ def _getOpener(ext):
 	if opener:
 		from importlib import import_module
 
-		if hasattr(opener, 'upper'): # Only a module name is available.
+		# #Pending: In the case of opening a ZipFile, if a filename within the archive isn't provided, use the first file.
+
+		if hasattr(opener, 'upper'): # Only a module name is available. #Pending: Implement proper string validation.
 			return import_module(opener).open
 
 		else: # a module name and object name pair is available.
@@ -241,6 +243,7 @@ def collectPaths(base, Includes=None, Excludes=None, absPaths=False, regex=False
 		regex (bool, False): When set to True, Includes and Excludes are parsed as regular expressions, instead of as globs.
 
 	#From: http://stackoverflow.com/questions/5141437/filtering-os-walk-dirs-and-files
+	# #Pending: Allow non-nested taraversals.
 	"""
 	if regex:
 		includes = r'|'.join(Includes) if Includes else r'.*'
@@ -343,6 +346,7 @@ def backup(sourcePath, backupBase=None, addTimeString=True):
 	r"""Backs up the given path.
 
 	When backupBase isn't given the path is renamed, not moved.
+	# #Note: This call along with restore, could preserve links.
 	"""
 	if not backupBase:
 		backupBase = dirname(abspath(sourcePath))
@@ -358,7 +362,7 @@ def restore(backupPath, sourcePath=None): #Pending: Add a way to handle time str
 	if not sourcePath:
 		sourcePath = splitext(backupPath)[0]
 
-	removePath(sourcePath)
+	_removePath(sourcePath)
 	os.rename(backupPath, sourcePath)
 
 # Init

@@ -43,7 +43,7 @@ class TSV:
 		"""
 		return self._reader
 
-	def write(self, *Rows):
+	def write(self, *Rows): #Pending: Make the call to utilize iterators.
 		r"""Appends the given rows to the file.
 		"""
 		return self._writer.writerows(Rows)

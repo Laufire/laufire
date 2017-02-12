@@ -1,4 +1,4 @@
-r"""A module to help with stroring validated data.
+r"""A module to help with storing validated data.
 
 #Later: Fix: Calling var from the command line doesn't pretty print the branches.
 #Later: Fix: Make dump to use pPrint.
