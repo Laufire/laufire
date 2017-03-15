@@ -3,10 +3,13 @@ A module to help with encrypting and decrypting the strings.
 
 #From: The module is improved over the script ccavutil.py from CCAvenue's integration kit for python.
 """
-
-from Crypto.Cipher import AES
 import md5
+import pyaes
 
+# Data
+iv = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
+
+# Helpers
 def pad(data):
 	length = 16 - (len(data) % 16)
 	data += chr(length) * length
@@ -15,22 +18,33 @@ def pad(data):
 def unpad(data):
 	return data[:-ord(data[len(data)-1])]
 
-def encrypt(plainText, workingKey):
-	iv = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
+def getAES(key):
+	digest = md5.new()
+	digest.update(key)
+
+	return pyaes.AESModeOfOperationCBC(digest.digest(), iv=iv)
+
+def spliceString(string, length=1):
+	for block in [string[i:i+length] for i in range(0, len(string), length)]:
+		yield block
+
+# Exports
+def encrypt(plainText, key):
 	plainText = pad(plainText)
-	encDigest = md5.new()
-	encDigest.update(workingKey)
-	enc_cipher = AES.new(encDigest.digest(), AES.MODE_CBC, iv)
-	encryptedText = enc_cipher.encrypt(plainText).encode('hex')
+	aes = getAES(key)
+	encryptedText = ''
 
-	return encryptedText
+	for block in spliceString(plainText, 16):
+		encryptedText += aes.encrypt(block)
 
-def decrypt(cipherText, workingKey):
-	iv = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
-	decDigest = md5.new()
-	decDigest.update(workingKey)
+	return encryptedText.encode('hex')
+
+def decrypt(cipherText, key):
 	encryptedText = cipherText.decode('hex')
-	dec_cipher = AES.new(decDigest.digest(), AES.MODE_CBC, iv)
-	decryptedText = dec_cipher.decrypt(encryptedText)
+	aes = getAES(key)
+	decryptedText = ''
+
+	for block in spliceString(encryptedText, 16):
+		decryptedText += aes.decrypt(block)
 
 	return unpad(decryptedText)

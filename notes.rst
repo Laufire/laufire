@@ -35,6 +35,8 @@ ToDo
 Pending
 -------
 
+* Add a requirements file.
+
 * Fix filesys.collectPaths. It has a lot of differences from the existing glob libraries. Also try to yield paths instead of returnig them.
 
 * Setting 'logLevel' through ecstore init hooks, isn't working if the underlying logger was loaded by some other module, before initialization (this loggerd will have the default name <unnamed*).
@@ -243,3 +245,7 @@ Log
 * 170217
 
 	* 1533	Added YamlEx.extend.
+
+* 170315
+
+	* 0741	Rewrote the module crypto to use **pyaes**, instead of **pycrypto**, which required GCC for installing.
