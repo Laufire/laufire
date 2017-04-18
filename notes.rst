@@ -249,3 +249,13 @@ Log
 * 170315
 
 	* 0741	Rewrote the module crypto to use **pyaes**, instead of **pycrypto**, which required GCC for installing.
+
+* 170418
+
+	* 1750	Added filesys.rename.
+
+* 170420
+
+	* 1917	Added filesys.iterateContent.
+	* 1958	Added utils.getMD5ForIterable.
+

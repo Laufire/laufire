@@ -145,6 +145,19 @@ def removePath(targetPath, requiredAncestor=None, forced=False):
 
 	return _removePath(targetPath)
 
+def rename(sourcePath, targetPath, requiredAncestor=None, forced=False):
+	r"""Renames any given file / dir / junction.
+
+	Args:
+		Args:
+		sourcePath (path): The path to rename.
+		targetPath (path): The target of the rename.
+		requiredAncestor (path): The target will only be renamed if it's a descendant of this dir. Defaults to the global attr fsRoot.
+		forced (bool): When set to true, an ancestor won't be required.
+	"""
+	removePath(targetPath, requiredAncestor, forced)
+	os.rename(sourcePath, targetPath)
+
 def ensureParent(childPath):
 	r"""Ensures the parent dir of the given childPathexists.
 
@@ -182,6 +195,13 @@ def getContent(filePath):
 		content = file.read()
 
 	return content
+	
+def iterateContent(filePath, width=4096):
+	r"""# Reads the given file as small chunks. This could be used to read large files without buffer overruns.
+	"""
+	with open(filePath, 'rb') as file:
+		for chunk in iter(lambda: file.read(width), b''):
+			yield chunk
 
 def setContent(filePath, content):
 	r"""Fills the given file with the given content.

@@ -1,17 +1,21 @@
 r"""Utilities
 """
-def getMD5(filePath): # #From: http://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
-	r"""Returns the MD5 digest of the given file.
-	"""
+def getMD5ForIterable(Iterable):
 	import hashlib
 
 	hashMD5 = hashlib.md5()
 
-	with open(filePath, 'rb') as file:
-		for chunk in iter(lambda: file.read(4096), b''): # Read the file as small chunks to avoid buffer overruns.
-			hashMD5.update(chunk)
+	for chunk in Iterable:
+		hashMD5.update(chunk)
 
 	return hashMD5.hexdigest()
+
+def getMD5(filePath): # #From: http://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
+	r"""Returns the MD5 digest of the given file.
+	"""
+	from laufire.filesys import iterateContent
+
+	return getMD5ForIterable(iterateContent(filePath))
 
 def getTimeString(useLocal=False):
 	r"""Returns the current time as a path friendly string.
