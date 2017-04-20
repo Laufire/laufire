@@ -32,6 +32,8 @@ ToDo
 
 * Replace YamlEx with a generic dictionary (ordered) dictionary templater, so to allow using other data formats for interpolation.
 
+* Update the Modules section.
+
 Pending
 -------
 
@@ -259,3 +261,14 @@ Log
 	* 1917	Added filesys.iterateContent.
 	* 1958	Added utils.getMD5ForIterable.
 
+* 170421
+
+	* 0232	Introduced a new module, decorators, to help with decorating functions.
+
+* 170422
+
+	* 1733	Bug Fixed: In decorators.memoize, caching sometimes failed due to the discrepancies with JSON decoding during the hash generation.
+
+* 170423
+
+	* 0059	Added decorators.rerun,
