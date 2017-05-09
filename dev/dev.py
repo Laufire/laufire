@@ -33,6 +33,7 @@ def interactive(func, message):
 			return
 
 		print e
+
 		if message:
 			print message
 
@@ -44,6 +45,13 @@ def pause(message='Paused! Press return to continue ...'):
 
 def peek(val):
 	print val
+	return val
+
+def hl(val, color='LIGHTYELLOW_EX'): # highlight
+	from laufire.logger import log
+
+	log(val, color)
+
 	return val
 
 def details(Obj):

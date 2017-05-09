@@ -96,6 +96,14 @@ def select(Dict, Keys):
 	"""
 	return {k: Dict[k] for k in Keys}
 
+def unpack(Dict, *Keys):
+	r"""
+	Unpacks the given keys of the given dictionary and assign them to the given variables.
+
+	#Ex: a, b, c = unpack(Dict, 'a', 'b', 'c')
+	"""
+	return tuple(Dict[k] for k in Keys)
+
 def walk(Iterable, RouteParts=None):
 	if RouteParts is None:
 		RouteParts = [None]

@@ -8,6 +8,7 @@ FileSys
 # #Note: Unlike removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur in creating recreatable resources).
 
 #Pending: Include the function prepro.helpers.linkTree.
+#Pending: Support file encodings.
 """
 import os
 import fnmatch
@@ -87,7 +88,7 @@ def resolve(basePath, relation):
 		basePath (path): The path of the base.
 		relation (str): The relation. Ex: '..', '../ops' etc.
 	"""
-	return abspath(pathJoin(pathSplit(basePath)[0], relation))
+	return abspath(pathJoin(basePath, relation))
 
 def copy(sourcePath, targetPath):
 	r"""Copies one path to the other.
@@ -195,9 +196,9 @@ def getContent(filePath):
 		content = file.read()
 
 	return content
-	
+
 def iterateContent(filePath, width=4096):
-	r"""# Reads the given file as small chunks. This could be used to read large files without buffer overruns.
+	r"""Reads the given file as small chunks. This could be used to read large files without buffer overruns.
 	"""
 	with open(filePath, 'rb') as file:
 		for chunk in iter(lambda: file.read(width), b''):
@@ -362,8 +363,8 @@ def extract(sourcePath, targetPath): # #Note: The tagertPath points to the extra
 	with ZipFile(sourcePath, 'r') as Z:
 		Z.extractall(targetPath)
 
-def backup(sourcePath, backupBase=None, addTimeString=True):
-	r"""Backs up the given path.
+def backup(sourcePath, backupBase=None, addTimeString=True, keepOriginal=False): # #Pending: Change the name of the call to preserve or safeguard. As the current name could be misleading.
+	r"""Backs up the given path to a temporary location, so that the returned path could be later used to restore it to the original location.
 
 	When backupBase isn't given the path is renamed, not moved.
 	# #Note: This call along with restore, could preserve links.
@@ -374,7 +375,7 @@ def backup(sourcePath, backupBase=None, addTimeString=True):
 	targetPath = '%s%s.bak' % (pathJoin(backupBase, basename(sourcePath)), ('%s.' % getTimeString()) if addTimeString else '')
 	removePath(targetPath, backupBase)
 
-	os.rename(sourcePath, targetPath)
+	(copy if keepOriginal else os.rename)(sourcePath, targetPath)
 
 	return targetPath
 

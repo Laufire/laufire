@@ -20,11 +20,17 @@ def waitFor(func, maxWait=None, message=None):
 	if message:
 		log(message)
 
-	while not func():
+	while True:
+
+		ret = func()
+
+		if ret:
+			return ret
+
 		waited += tickTime
 
 		if waited > maxWait:
-			raise Exception('Maximum wait time exceded.')
+			raise Exception('Maximum wait time exceded.' if not message else 'Failed waiting for: %s' % message)
 
 		if message:
 			debug(message)

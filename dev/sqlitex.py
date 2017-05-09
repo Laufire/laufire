@@ -11,6 +11,12 @@ def dictFactory(cursor, row):
 	return d
 
 # Exports
+def execute(filePath, query, useDict=False):
+	r"""Executes the given query over the given DB and returns the results, if any.
+	"""
+	DB = SQLiteDB(filePath, useDict)
+	return DB.execute(query).fetchall()
+
 class SQLiteDB:
 	def __init__(self, filePath=':memory:', useDict=False):
 		r"""

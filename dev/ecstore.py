@@ -2,6 +2,7 @@ r"""A module to help with storing validated data.
 
 #Later: Fix: Calling var from the command line doesn't pretty print the branches.
 #Later: Fix: Make dump to use pPrint.
+#Later: The commad setup followed by any text triggers a overwrite, use ec inputs to conver the arg to boolean.
 #Later: Rename the method Store.get into Store.gather or something else, to avoid confusing it with the get method of Dictionaries, as Stores also support keys, like dictionaries.
 #Later: vars could use Classes to define separate hooks for get, set etc; instead of using the current, two param function hooks. Note, add this feature, while retaining the single function hook, without commands, which is to be called on init and set.
 #Later: Think of using **with blocks** for declaration, instead of decorators, as the syntax looks cleaner. #Refer: http://stackoverflow.com/questions/1255914/finding-functions-defined-in-a-with-block
@@ -23,6 +24,7 @@ from laufire.parser import parse as _parse
 # State
 State = []
 keyPartPattern = re.compile(r'([^/]+/)')
+Commands = ['setup', 'var', 'dump']
 
 # Helpers
 def getName(Obj, Dict):
@@ -31,6 +33,20 @@ def getName(Obj, Dict):
 
 	return Dict['name']
 
+def getSTDIN():
+	from sys import stdin
+
+	if stdin.isatty():
+		return
+
+	b = b''
+
+	for chunk in iter(lambda: stdin.read(4096), b''):
+		b += chunk
+
+	return b or None
+
+# Workers
 def collectChildren(Obj):
 	AttrDict = {} # Used to get the name of vars, without hooks.
 
@@ -127,7 +143,7 @@ def processCommand(Store):
 	else:
 		command = Argv.pop(0)
 
-		if command not in ['setup', 'var', 'dump']:
+		if command not in Commands:
 			raise Exception('Command "%s" is not recognized.' % command)
 
 	ret = getattr(Store, command)(*Argv)
@@ -215,7 +231,9 @@ class ConfiguredStore:
 		Config = self._Configs.get(route)
 
 		if value is None:
+			value = getSTDIN()
 
+		if value is None:
 			if not Config:
 				return self._Values[route]
 

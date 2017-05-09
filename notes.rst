@@ -272,3 +272,22 @@ Log
 * 170423
 
 	* 0059	Added decorators.rerun,
+
+* 170529
+
+	* 2149	The command ecstore.var now accepts inputs to the vars through stdin.
+
+* 170712
+
+	* 0023	Added sqliteex.execute, a quick call to execute queries on DBs.
+
+* 170713
+
+	* 0247	Added the option filesys.backup.keepOriginal, to make a copy of the source file, instead of moving it during the process.
+	* 1637	Added extensions.unpack.
+
+* 170714
+
+	* 1439	Bug Fixed: filesys.resolve was buggy.
+	* 2104	flow.waitFor now returns the value of the waiting function.
+	* 2230	Added dev.hl (highlight), a colored variation of peek.
