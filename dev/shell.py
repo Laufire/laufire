@@ -9,7 +9,7 @@ from subprocess import Popen, PIPE
 from shlex import split as shlexSplit
 
 from laufire.dev import getPretty
-from laufire.logger import debug
+from laufire.logger import debug, dump
 
 # State
 split = None
@@ -25,7 +25,7 @@ def run(command, **KWArgs):
 	#Tip: Use this method to live stream output from the command.
 	"""
 	debug(command)
-	debug(getPretty(KWArgs))
+	dump(getPretty(KWArgs))
 
 	p = Popen(split(command), **KWArgs)
 	p.wait()
@@ -38,7 +38,7 @@ def call(command, **KWArgs): # from gitapi.py
 	#Tip: Use this method when there's a need to process stdout or stderr.
 	"""
 	debug(command)
-	debug(getPretty(KWArgs))
+	dump(getPretty(KWArgs))
 
 	p = Popen(split(command), stdout=PIPE, stderr=PIPE, **KWArgs)
 	out, err = [x.decode('utf-8') for x in p.communicate()]
@@ -48,14 +48,14 @@ def call(command, **KWArgs): # from gitapi.py
 def piped(*Commands, **KWArgs):
 	r"""Emulates piped commands in *nix systems. Returns a dictionary with the final return-code, stdout and a stderr.
 	"""
-	debug(getPretty(KWArgs))
+	dump(getPretty(KWArgs))
 
 	out = None
 	err = None
 	code = 0
 
 	for command in Commands:
-		debug(getPretty(command))
+		debug(command)
 
 		p = Popen(split(command), stdout=PIPE, stderr=PIPE, stdin=PIPE, **KWArgs)
 		out, err = p.communicate(out)
@@ -66,6 +66,22 @@ def piped(*Commands, **KWArgs):
 
 	return {'out': out, 'err': err, 'code': code}
 
+def writable(command, data, **KWArgs):
+	r"""Opens a process and writes the given data to its STDIN.
+
+	The newline character could be used to separate multiple lines.
+	"""
+	debug(command)
+	dump(getPretty(KWArgs))
+	# #Note: data isn't dumped, to keep it secure.
+
+	p = Popen(split(command), stdout=PIPE, stderr=PIPE, stdin=PIPE, **KWArgs)
+	out, err = p.communicate(data)
+
+	code = p.returncode
+
+	return {'out': out, 'err': err, 'code': code}
+
 def debugCall(command, **KWArgs):
 	r"""Starts a process, waits till the process completes and returns a dictionary with the return-code, stdout and stderr.
 
@@ -73,7 +89,7 @@ def debugCall(command, **KWArgs):
 	#Tip: A modified pdb like, modPdb = pdb.Pdb(stdout=sys.__stderr__), could be used to debug scripts in stderr.
 	"""
 	debug(command)
-	debug(getPretty(KWArgs))
+	dump(getPretty(KWArgs))
 
 	p = Popen(split(command), stdout=PIPE, **KWArgs)
 
@@ -83,7 +99,7 @@ def launch(command, **KWArgs):
 	r"""Launches a process and quits without waiting for its completion.
 	"""
 	debug(command)
-	debug(getPretty(KWArgs))
+	dump(getPretty(KWArgs))
 
 	return Popen(split(command), stdout=PIPE, stderr=PIPE, **KWArgs)
 
@@ -109,7 +125,7 @@ class CwdSwitch:
 def assertShell(ShellResult, errorLine=None):
 	r"""Asserts the success of a shell command.
 	"""
-	debug(getPretty(ShellResult))
+	dump(getPretty(ShellResult))
 
 	if ShellResult['code']:
 		errorStr = ShellResult['err'] or ShellResult['out']

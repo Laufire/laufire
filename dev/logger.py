@@ -1,3 +1,9 @@
+r"""
+A module to help with logging.
+
+The reason for a custom module is due to different preferences in the output levels and style.
+"""
+
 import logging
 
 from colorama import Fore, Style, init as colorama_init
@@ -24,6 +30,13 @@ def logError(message):
 	"""
 	Logger.error('%s%s\n' % (BRED, message)) #pylint: disable=W1201
 
+def dump(message):
+	if Logger.level > 1:
+		Supressed.append(message)
+
+	else:
+		Logger.debug(message)
+
 def debug(message):
 	if Logger.level > 10:
 		Supressed.append(message) #Pending: Add a max-size setting for the Buffer.
@@ -36,7 +49,7 @@ def setLevel(lvl):
 		Args:
 			lvl	 (int): Could be one of the following integers (1, 2, 3, 4, 5). The greater the number lesser the logs.
 	"""
-	Logger.setLevel(lvl * 10)
+	Logger.setLevel((lvl * 10) or 1) # #Note: 0 silences the logger.
 
 # Init
 def setup(Project):

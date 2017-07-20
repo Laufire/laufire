@@ -291,3 +291,18 @@ Log
 	* 1439	Bug Fixed: filesys.resolve was buggy.
 	* 2104	flow.waitFor now returns the value of the waiting function.
 	* 2230	Added dev.hl (highlight), a colored variation of peek.
+
+* 170720
+
+	* 1825	Bug Fixed: flow.interactive.message wasn't optional.
+
+* 170721
+
+	* 0410	Imported prepro.helpers.linkTree as filesys.linkTree.
+	* 0410	Introduced debug logging to some key filesys calls.
+	* 0429	Introduced logger.dump.
+	* 0432	Reduced the output from the module shell.
+
+* 170722
+
+	* 0012	Introduced shell.writable, as a way to write to the STDIN of the spawned process.

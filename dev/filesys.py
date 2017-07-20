@@ -7,7 +7,6 @@ FileSys
 # #Note: Path removals generally require an ancestor to be specified, so to avoid accidental deletes.
 # #Note: Unlike removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur in creating recreatable resources).
 
-#Pending: Include the function prepro.helpers.linkTree.
 #Pending: Support file encodings.
 """
 import os
@@ -19,6 +18,7 @@ from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin
 from glob2 import glob
 from shutil import copy as _copy, copytree
 
+from laufire.logger import debug
 from laufire.utils import getRandomString, getTimeString
 
 from laufire.helpers.filesys import link, symlink, rmlink, isLinkedDir
@@ -28,6 +28,7 @@ fsRoot = '.' # Risky filesystem operations such as removePath are limited to fsR
 
 # Data
 Ext2Opener = {'zip': ('zipfile', 'ZipFile'), 'gz': 'gzip'} # #Pending: Instead of having module, object pairs import objects (for that write a support module. ie: import_obj('zipfile.ZipFile')
+_AllFiles = ['**/*.*', '**/.*']
 
 # Helpers
 def rmtree(targetPath):
@@ -80,6 +81,15 @@ def _getOpener(ext):
 	else:
 		return lambda filePath: open(filePath, 'rb')
 
+def getPathPairs(source, target, *Globs):
+	r"""Iterates over the given globs and yields a tuple with source and destination paths.
+	"""
+	srcLen = len(source) + 1
+
+	for item in Globs:
+		for filePath in glob('%s/%s' % (source, item)):
+			yield filePath, '%s/%s' % (target, filePath[srcLen:])
+
 # Exports
 def resolve(basePath, relation):
 	r"""Resolves a relative path of the given basePath.
@@ -129,6 +139,26 @@ def makeLink(sourcePath, targetPath, isHard=False):
 	else:
 		raise Exception('Invalid source path: %s' % sourcePath)
 
+def linkTree(source, target, *Globs, **KWArgs):
+	r"""Re-creates the structure of the source at the target by creating dirs and linking files.
+
+	KWArgs:
+		hardLinks (boolean): Uses hard links for linking.
+		clean (boolean): Cleans the target dir before linking.
+	"""
+	hardLinks = KWArgs.get('hardLinks', False)
+
+	if not Globs:
+		Globs = _AllFiles
+
+	if KWArgs.get('clean'):
+		removePath(target)
+
+	for src, dest in getPathPairs(source, target, *Globs):
+		ensureParent(dest)
+		debug('linking: %s -> %s' % (src, dest))
+		makeLink(src, dest, hardLinks)
+
 def removePath(targetPath, requiredAncestor=None, forced=False):
 	r"""Removes any given file / dir / junction.
 
@@ -144,6 +174,7 @@ def removePath(targetPath, requiredAncestor=None, forced=False):
 		if not isDescendant(targetPath, requiredAncestor):
 			raise Exception('"%s" is not a descendant of "%s"' % (targetPath, requiredAncestor))
 
+	debug('removePath: %s' % targetPath)
 	return _removePath(targetPath)
 
 def rename(sourcePath, targetPath, requiredAncestor=None, forced=False):

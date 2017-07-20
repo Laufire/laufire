@@ -23,7 +23,7 @@ def _getPretty(Iterable, indent):
 
 	return ret.encode('utf-8')
 
-def interactive(func, message):
+def interactive(func, message=None):
 	r"""Helps with re-running tasks till there were no errors.
 	"""
 	while True:
