@@ -23,7 +23,7 @@ def _getPretty(Iterable, indent):
 
 	return ret.encode('utf-8')
 
-def interactive(func, message=None):
+def interactive(func, message=None, raiseError=False):
 	r"""Helps with re-running tasks till there were no errors.
 	"""
 	while True:
@@ -34,13 +34,13 @@ def interactive(func, message=None):
 
 		print e
 
-		if message:
-			print message
+		if raw_input((message or 'Fix and continue...') + ' (Y/n):').lower() == 'n':
+			if raiseError:
+				raise e
 
-		if raw_input('Fix and continue ... (Y/n):').lower() == 'n':
 			return e
 
-def pause(message='Paused! Press return to continue ...'):
+def pause(message='Paused! Press return to continue...'):
 	raw_input(message)
 
 def peek(val):
@@ -52,6 +52,12 @@ def hl(val, color='LIGHTYELLOW_EX'): # highlight
 
 	log(val, color)
 
+	return val
+
+def tee(val, func):
+	r"""Tee-s given value into the given function.
+	"""
+	func(val)
 	return val
 
 def details(Obj):

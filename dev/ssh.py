@@ -39,7 +39,7 @@ def _upload(SFTP, localPath, remotePath):
 		if err and not isinstance(err, IOError):
 			raise err
 
-		for item in listdir(localPath):
+		for item in listdir(localPath): # #Note: With dir uploads, the uploads are merged (added / overwritten) with existing paths.
 			_upload(SFTP, '%s/%s' % (localPath, item), '%s/%s' % (remotePath, item))
 
 	else: # Path doesn't exist.

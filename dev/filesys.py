@@ -122,6 +122,7 @@ def copy(sourcePath, targetPath):
 def makeLink(sourcePath, targetPath, isHard=False):
 	r"""Links two paths. Files are hard linked, where as dirs are linked as junctions.
 	"""
+	debug('linking: %s => %s' % (sourcePath, targetPath))
 	sourcePath = abspath(sourcePath)
 	targetPath = abspath(targetPath)
 
@@ -156,7 +157,6 @@ def linkTree(source, target, *Globs, **KWArgs):
 
 	for src, dest in getPathPairs(source, target, *Globs):
 		ensureParent(dest)
-		debug('linking: %s -> %s' % (src, dest))
 		makeLink(src, dest, hardLinks)
 
 def removePath(targetPath, requiredAncestor=None, forced=False):
@@ -212,13 +212,33 @@ def ensureCleanDir(dir, requiredAncestor=None):
 	removePath(dir, requiredAncestor)
 	makedirs(dir)
 
-def getFreeFilePath(paretnDir, length=8):
-	if exists(paretnDir):
+def getFreeFilePath(parentDir, length=8):
+	if exists(parentDir):
 		while True:
-			freePath = pathJoin(paretnDir, getRandomString(length))
+			freePath = pathJoin(parentDir, getRandomString(length))
 
 			if not exists(freePath):
 				return freePath
+
+def isLocked(filePath, tempPath=None): # #Pending: Check, whether there is a proper and robust way to check the lock status, instead of renaming the path.
+	r"""Checks whether the given path is locked.
+	"""
+	if not exists(filePath):
+		return
+
+	if not tempPath:
+		while True:
+			tempPath = '%s.%s' % (filePath, getRandomString())
+
+			if not exists(tempPath):
+				break
+
+	if forgive(lambda: rename(filePath, tempPath)):
+		return True
+
+	rename(tempPath, filePath)
+
+	return False
 
 def getContent(filePath):
 	r"""Reads a file and returns its content.

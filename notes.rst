@@ -37,6 +37,8 @@ ToDo
 Pending
 -------
 
+* Redo the debug logs.
+
 * Add a requirements file.
 
 * Fix filesys.collectPaths. It has a lot of differences from the existing glob libraries. Also try to yield paths instead of returnig them.
@@ -306,3 +308,14 @@ Log
 * 170722
 
 	* 0012	Introduced shell.writable, as a way to write to the STDIN of the spawned process.
+
+* 170725
+
+	* 0340	Introduced filesys.isLocked.
+
+* 170726
+
+	* 0444	Introduced tools, a set of modules to aid with well defined problems.
+	* 0444	Introduced tools.ss.
+	* 0558	Introduced the argument, dev.interactive.raiseError, which when true, raised any errors instead of returning it.
+	* 2222	Inreoduce dev.tee.
