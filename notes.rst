@@ -319,3 +319,12 @@ Log
 	* 0444	Introduced tools.ss.
 	* 0558	Introduced the argument, dev.interactive.raiseError, which when true, raised any errors instead of returning it.
 	* 2222	Inreoduce dev.tee.
+
+* 170728
+
+	* 0816	Bug fixed: filesys.linkTree wans't making parent dirs, but linked them, when hardLinks was set to true.
+
+* 170730
+
+	* 2315	Bug fixed: flow.retry slept an extra time, after the call returned success.
+	* 2315	Introduced tools.retry.

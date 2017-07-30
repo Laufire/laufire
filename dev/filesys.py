@@ -7,13 +7,14 @@ FileSys
 # #Note: Path removals generally require an ancestor to be specified, so to avoid accidental deletes.
 # #Note: Unlike removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur in creating recreatable resources).
 
+#Pending: Check: Could links be removed, even outside thr fsRoot?
 #Pending: Support file encodings.
 """
 import os
 import fnmatch
 import re
 
-from os import unlink, rmdir, makedirs
+from os import unlink, rmdir, mkdir, makedirs
 from os.path import isdir, isfile, split as pathSplit, abspath, join as pathJoin, exists, dirname, basename, commonprefix, splitext
 from glob2 import glob
 from shutil import copy as _copy, copytree
@@ -157,7 +158,12 @@ def linkTree(source, target, *Globs, **KWArgs):
 
 	for src, dest in getPathPairs(source, target, *Globs):
 		ensureParent(dest)
-		makeLink(src, dest, hardLinks)
+
+		if hardLinks and isdir(dest):
+			mkdir(dest)
+
+		else:
+			makeLink(src, dest, hardLinks)
 
 def removePath(targetPath, requiredAncestor=None, forced=False):
 	r"""Removes any given file / dir / junction.

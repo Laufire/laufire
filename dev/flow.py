@@ -56,10 +56,15 @@ def rob(func):
 		return
 
 def retry(func, repeat=3, delay=tickTime * 2):
+	r"""
+	Calls the given function till it returns a value.
+
+	Set repeat to -1, to try untill success.
+	"""
 	while repeat:
 		result = func()
 
-		if result is None and delay:
+		if result is None and delay and repeat != 1:
 			sleep(delay)
 
 		else:
