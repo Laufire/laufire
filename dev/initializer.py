@@ -44,8 +44,6 @@ def collectConfigData(Attrs):
 
 	Config = YamlEx(configPath, loglevel='ERROR') if configPath else YamlEx(loglevel='ERROR')
 
-	Data = Config.Data
-
 	if 'ConfigExtensions' in Attrs:
 		Config.extend(Attrs['ConfigExtensions'])
 

@@ -146,7 +146,7 @@ class SSHBridge:
 		return self.Client.execute(command.format(**self.GatewayConfig))
 
 	def callScript(self, ecCommand):
-		out = assertShell(self.iexecute('cd {scriptsDir} && {pythonPath} %s' % ecCommand))
+		out = assertShell(self.iexecute('cd {appDir} && {pythonPath} %s' % ecCommand))
 		return json.loads(out) if out else None
 
 	def upload(self, srcPath, tgtName=''): # #Note: Uploads are always done to the temp dir.

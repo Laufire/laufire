@@ -326,5 +326,14 @@ Log
 
 * 170730
 
-	* 2315	Bug fixed: flow.retry slept an extra time, after the call returned success.
+	* 2245	Bug fixed: flow.retry slept an extra time, after the call returned success.
 	* 2315	Introduced tools.retry.
+
+* 170731
+
+	* 0724	mock.ssh.callScript now raises an exception with the got stdout as its message, if the out weren't JSON
+	* 0826	Introduced filesys.pair.
+
+* 170803
+
+	* 1256	mock.ssh now resembles ssh, a bit more closely.
