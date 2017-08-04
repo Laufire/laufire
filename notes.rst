@@ -337,3 +337,12 @@ Log
 * 170803
 
 	* 1256	mock.ssh now resembles ssh, a bit more closely.
+	* 1414	Fixed a lot of bugs in filesys. Linking and path removal were buggy.
+
+* 170804
+
+	* 0219	filesys dosen't depend on the package, glob2 anymore.
+	* 0311	filesys dosen't depend on the package, shutil anymore.
+	* 0759	filesys.linkTree and now uses Includes and Excludes, rather than globs.
+	* 0759	Removed the option filesys.collectPaths.absPaths.
+	* 0930	filesys.getPathPairs now use Includes, instead of globs.
