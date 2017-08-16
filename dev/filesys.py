@@ -10,11 +10,14 @@ Notes
 	* Path removals generally require an ancestor to be specified, so to avoid accidental deletes.
 	* Unlike removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur in creating recreatable resources).
 	* The module shutill isn't used as it treats file-system differently, than this module does. Ex: shutil.rmtree will remove the files with-in dir junctions instead of merely removing the junction.
+	* Debuging is always done with abspaths, so to give the right context (#Pending: Check: Couls this be a security issue?)
 
 Pending
 -------
 
+	* Normalize the paths before operations, as some os functionality (like resolving symlinks), rely on the path being well formed.
 	* Check: Could links be removed, even outside the fsRoot?
+	* The module doesn't handle unicode file-names. So does the package zipfile of Python2.
 	* Support file encodings.
 	* Add a function to copy file attributes, etc.
 	* Add an isOk call to verify the correctness of the files (to avoid unresolved links etc).
@@ -36,6 +39,7 @@ from glob2 import glob
 
 # State
 fsRoot = '.' # Risky filesystem operations such as removePath are limited to fsRoot.
+sep = os.sep
 
 # Data
 Ext2Opener = {'zip': ('zipfile', 'ZipFile'), 'gz': 'gzip'} # #Pending: Instead of having module, object pairs import objects (for that write a support module. ie: import_obj('zipfile.ZipFile')
@@ -62,11 +66,16 @@ def rmtree(tgtPath):
 	rmdir(tgtPath)
 
 def _makeLink(srcPath, tgtPath, pathType, hardLinks):
+
+	srcPath, tgtPath = abspath(srcPath), abspath(tgtPath)
+
+	debug('linking: %s => %s' % (srcPath, tgtPath))
+
 	if pathType == 1:
-		(link if hardLinks else symlink)(abspath(srcPath), abspath(tgtPath))
+		(link if hardLinks else symlink)(srcPath, tgtPath)
 
 	else:
-		symlink(abspath(srcPath), abspath(tgtPath)) # #Note: Dirs can't be hard-linked.
+		symlink(srcPath, tgtPath) # #Note: Dirs can't be hard-linked.
 
 def _removePath(tgtPath):
 	if isfile(tgtPath):
@@ -101,7 +110,7 @@ def _getOpener(ext):
 def pair(src, tgt, postFix):
 	r"""Returns a pair of the given post-fix affixed source and target paths.
 	"""
-	return '%s/%s' % (src, postFix), '%s/%s' % (tgt, postFix)
+	return '%s%s%s' % (src, sep, postFix), '%s%s%s' % (tgt, sep, postFix)
 
 def getPathPairs(source, target, *Includes):
 	r"""Iterates over the given globs and yields a tuple with source and destination paths.
@@ -109,8 +118,8 @@ def getPathPairs(source, target, *Includes):
 	srcLen = len(source) + 1
 
 	for Collection in collectPaths(source, Includes):
-		for filePath in ['%s/%s' % (source, item) for item in Collection]:
-			yield filePath, '%s/%s' % (target, filePath[srcLen:])
+		for filePath in ['%s%s%s' % (source, sep, item) for item in Collection]:
+			yield filePath, '%s%s%s' % (target, sep, filePath[srcLen:])
 
 # Exports
 def resolve(basePath, relation):
@@ -140,14 +149,17 @@ def copy(srcPath, tgtPath, overwrite=False):
 		ensureDir(tgtPath)
 		Dirs, Files = collectPaths(srcPath)
 
-		if overwrite:
+		if not overwrite:
 			for dir in Dirs:
-				mkdir('%s/%s' % (tgtPath, dir))
+				dir = '%s%s%s' % (tgtPath, sep, dir)
+				debug('Creating: %s' % dir)
+				mkdir(dir)
 
 		else:
 			for dir in Dirs:
-				dir = '%s/%s' % (tgtPath, dir)
+				dir = '%s%s%s' % (tgtPath, sep, dir)
 				if not exists(dir):
+					debug('Creating: %s' % dir)
 					mkdir(dir)
 
 		for file in Files:
@@ -156,10 +168,6 @@ def copy(srcPath, tgtPath, overwrite=False):
 def makeLink(srcPath, tgtPath, hardLinks=False):
 	r"""Links two paths. Files are hard linked, where as dirs are linked as junctions.
 	"""
-	debug('linking: %s => %s' % (srcPath, tgtPath))
-	srcPath = abspath(srcPath)
-	tgtPath = abspath(tgtPath)
-
 	pathType = getPathType(srcPath)
 	_removePath(tgtPath)
 	ensureParent(tgtPath)
@@ -173,27 +181,34 @@ def linkTree(srcPath, tgtPath, Includes=None, Excludes=None, **KWArgs):
 		hardLinks (boolean): Uses hard links for linking.
 		clean (boolean): Cleans the target dir before linking.
 	"""
-	hardLinks = KWArgs.get('hardLinks', False)
+	hardLinks = KWArgs.get('hardLinks', True)
 
 	clean = KWArgs.get('clean', True)
 
 	if clean:
-		removePath(tgtPath)
+		removePath(tgtPath) # #Pending: Fix: removePath prevents linkTree from being used on dirs outside fsRoot, as a requiredAncestor cannot be specified.
 
-	linker = symlink if not hardLinks else link
+	linker = symlink if not hardLinks else link # #Pending: Check: Should hardLinks be the default, as they cannot be used across drives?
 
 	ensureDir(tgtPath)
 
 	Dirs, Files = collectPaths(srcPath, Includes, Excludes)
 
-	for dir in (Dirs if clean else [dir for dir in Dirs if not exists(dir)]):
-		mkdir('%s/%s' % (tgtPath, dir))
+	if clean:
+		for dir in Dirs:
+			mkdir('%s%s%s' % (tgtPath, sep, dir))
+
+	else:
+		for dir in Dirs:
+			_dir = '%s%s%s' % (tgtPath, sep, dir)
+
+			if not exists(_dir):
+				mkdir(_dir)
 
 	_srcPath = abspath(srcPath) # Link sources should be abs-paths.
 
 	for file in Files:
-		Pair = pair(_srcPath, tgtPath, file)
-		debug('linking: %s => %s' % Pair)
+		Pair = pair(_srcPath, abspath(tgtPath), file)
 
 		tgtFilePath = Pair[1]
 		ensureParent(tgtFilePath)
@@ -201,6 +216,7 @@ def linkTree(srcPath, tgtPath, Includes=None, Excludes=None, **KWArgs):
 		if not clean and exists(tgtFilePath):
 			unlink(tgtFilePath)
 
+		debug('linking: %s => %s' % Pair)
 		linker(*Pair)
 
 def removePath(tgtPath, requiredAncestor=None, forced=False):
@@ -296,10 +312,7 @@ def isLocked(filePath, tempPath=None): # #Pending: Check, whether there is a pro
 def getContent(filePath):
 	r"""Reads a file and returns its content.
 	"""
-	with open(filePath, 'rb') as file:
-		content = file.read()
-
-	return content
+	return open(filePath, 'rb').read()
 
 def iterateContent(filePath, width=4096):
 	r"""Reads the given file as small chunks. This could be used to read large files without buffer overruns.
@@ -312,9 +325,15 @@ def setContent(filePath, content):
 	r"""Fills the given file with the given content.
 	"""
 	ensureParent(filePath)
+	open(filePath, 'wb').write(content)
 
-	with open(filePath, 'wb') as file:
-		file.write(content)
+def appendContent(filePath, content):
+	r"""Appends the given file with the given content.
+	"""
+	if not exists(filePath):
+		return setContent(filePath, content)
+
+	open(filePath, 'ab').write(content)
 
 def copyContent(srcPath, tgtPath):
 	r"""
@@ -322,6 +341,7 @@ def copyContent(srcPath, tgtPath):
 
 	# #Note: Unlike shutil.copy attributes aren't copied.
 	"""
+	debug('Copying: %s => %s' % (srcPath, tgtPath))
 	with open(tgtPath, 'wb') as tgt:
 		for chunk in iterateContent(srcPath):
 			tgt.write(chunk)
@@ -372,7 +392,7 @@ def expandGlobs(rootPath, *Patterns):
 
 	return Paths
 
-def collectPaths(base, Includes=None, Excludes=None, regex=False, followlinks=True):
+def collectPaths(base, Includes=None, Excludes=None, regex=False, followlinks=True, trimmed=True):
 	r"""Returns two lists containing dirs and files of the given base dir.
 
 	Args:
@@ -383,7 +403,10 @@ def collectPaths(base, Includes=None, Excludes=None, regex=False, followlinks=Tr
 
 	#From: http://stackoverflow.com/questions/5141437/filtering-os-walk-dirs-and-files
 	#Note: Includes and Excludes are not regulat globs, as they cant experss 'files at the root' as a single expression. But they do support regular expressions.
+	# #Pending: Return paths with correct os separator.
 	# #Pending: Allow non-nested traversals.
+	# #Pending: Fix: Incudes doen't work with patterns without beginning *, if the base has expandable charcters. This could be fixed by normalizing the paths.
+	# #Pending: Instead of using two lists for Includes and excludes, a single string could be used with the pattern 'Incl1|Incl2!Excl1|Excl2'. This would greatly enhance readability.
 	"""
 	if regex:
 		includes = r'|'.join(Includes) if Includes else r'.*'
@@ -414,8 +437,11 @@ def collectPaths(base, Includes=None, Excludes=None, regex=False, followlinks=Tr
 
 	AllDirs = [d for d in AllDirs if re.match(includes, d)]
 
-	startPos = len(base) + 1
-	return [dir[startPos:] for dir in AllDirs], [file[startPos:] for file in AllFiles]
+	if trimmed:
+		startPos = len(base) + 1
+		return [normpath(dir[startPos:]) for dir in AllDirs], [normpath(file[startPos:]) for file in AllFiles] # #Note: The base path is removed, due the posibility of it containg special characters like ~, .. etc.
+
+	return [normpath('%s/%s' % (base, dir)) for dir in AllDirs], [normpath('%s/%s' % (base, file)) for file in AllFiles]
 
 def isDescendant(probableDescendant, requiredAncestor):
 	r"""Checks whether the given path is a descendant of another.
@@ -427,6 +453,23 @@ def isDescendant(probableDescendant, requiredAncestor):
 	requiredAncestor = abspath(requiredAncestor)
 
 	return commonprefix([abspath(probableDescendant), requiredAncestor]) == requiredAncestor
+
+def getAncestor(path, ancestorName):
+	r"""
+	Returns the first ancestor of the given path, which has the given name.
+	"""
+	path = abspath(path)
+
+	while True:
+		ancestor = dirname(path)
+
+		if not ancestor or ancestor == path:
+			return
+
+		if basename(ancestor) == ancestorName:
+			return ancestor
+
+		path = ancestor
 
 def isContainer(path):
 	return isdir(path) or isLinkedDir(path)

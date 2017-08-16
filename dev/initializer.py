@@ -111,7 +111,7 @@ def init():
 
 	setCWD(Attrs.get('cwd'))
 
-	setCWD(addPaths(Attrs.get('Paths')))
+	addPaths(Attrs.get('Paths'))
 
 	silenceLoggers(Attrs.get('LoggersToSilence')) # #Later: Think of silencing every other log, than that of the project or those that are excluded.
 

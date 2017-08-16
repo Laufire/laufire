@@ -346,3 +346,14 @@ Log
 	* 0759	filesys.linkTree and now uses Includes and Excludes, rather than globs.
 	* 0759	Removed the option filesys.collectPaths.absPaths.
 	* 0930	filesys.getPathPairs now use Includes, instead of globs.
+
+* 170805
+
+	* 1329	Bug fixed: symlinks weren't working, due to	incompatible path separators.
+	* 1351	filesys.linkTree.hardLinks now defaults to true, as WAMP doesn't handle symlinks well.
+
+* 170810
+
+	* 1932	Added filesys.appendContent.
+	* 1945	Improved the handling of path separators.
+	* 1948	Added filesys.getAncestor.
