@@ -1,5 +1,5 @@
 r"""
-A module to help with debelopment.
+A module to help with development.
 """
 import json
 import re
@@ -17,28 +17,14 @@ def getTgtName(tgtName, srcPath):
 
 class SSHClientMocker:
 	def __init__(self, Config):
-		MockConfig = Config['Gateway']['Mock']
-		self.GatewayConfig = Config['Gateway']
-		self.mockScriptTpl = MockConfig['scriptTemplate']
-		self.mockBase = MockConfig['base'] # #Pending: Stel the CWD before execution and if possible restore it.
-		self.gatewayDir = MockConfig['gateway']
-
-		Config['Gateway']['pythonPath'] = 'python' # #Pending: This is a puick fix. Remove it, once the remote can locate its python thrugh shell.
-
-	def _expandPath(self, tgtPath, useAbsPath=False):
-		return tgtPath.replace('~', abspath(self.mockBase) if useAbsPath else self.mockBase) # #Caution: This is a corase implementation, as os.path.expandvars couldn't be used on a remote system to expand path vars. And using regex is not effective enough.
+		Paths = Config['Gateway']['Paths']
+		self.mockBase = Paths['base']
 
 	def execute(self, command, **KWArgs):
-		return call(self._expandPath(command, True), **KWArgs)
-
-	def iexecute(self, command, **KWArgs):
-		r"""Interpolates the command with the Config, before executing.
-		"""
-		return self.execute(command.format(**self.GatewayConfig), **KWArgs)
+		return call(command, **KWArgs)
 
 	def upload(self, srcPath, tgtPath): # #Note: Uploads are done always to the temp dir.
-		tgtPath = self._expandPath(tgtPath)
-		debug('Uploading %s -> %s' % (srcPath, tgtPath))
+		debug('uploading %s -> %s' % (srcPath, tgtPath))
 		ensureParent(tgtPath)
 		return copy(srcPath, tgtPath)
 
@@ -49,7 +35,12 @@ class SSHBridgeMocker:
 	# #Note: This class doesn't fully mock SSHBridge as the need didn't arise.
 	"""
 	def __init__(self, Config):
+		self.Config = Config
 		self.Client = SSHClientMocker(Config)
+
+		Config['Gateway']['Python']['binary'] = 'python' # #Pending: This is a quick fix. Remove it, once the remote can locate its python through shell.
+
+		self.mockScriptTpl = '%s %s/%%s' % (Config['Gateway']['Python']['binary'], Config['Gateway']['Paths']['private'])
 
 	def __getattr__(self, attr):
 		r"""
@@ -57,8 +48,13 @@ class SSHBridgeMocker:
 		"""
 		return getattr(self.Client, attr)
 
+	def iexecute(self, command, **KWArgs):
+		r"""Interpolates the command with the Config, before executing.
+		"""
+		return self.Client.execute(command.format(**self.Config['Gateway']), **KWArgs)
+
 	def callScript(self, ecCommand):
-		out = assertShell(call(self.mockScriptTpl % ecCommand, cwd=self.gatewayDir, shell=True))
+		out = assertShell(call(self.mockScriptTpl % ecCommand, shell=True))
 
 		if out:
 			Out =	rob(lambda: json.loads(out))
@@ -72,7 +68,13 @@ class SSHBridgeMocker:
 	def debugScript(self, ecCommand):
 		r"""Helps with debugging the gateway scripts.
 		"""
-		debugCall(self.mockScriptTpl % ecCommand, cwd=self.gatewayDir)
+		debugCall(self.mockScriptTpl % ecCommand)
 
-	def upload(self, srcPath, tgtName=''):
-		return self.Client.upload(srcPath, '%s/%s' % ('~/gateway/_temp', getTgtName(tgtName, srcPath)))
+	def upload(self, srcPath, tgtPath=''):
+		if not tgtPath:
+			tgtPath = '%s/%s' % (self.Config['Gateway']['Paths']['temp'], getTgtName(None, srcPath))
+
+		else:
+			tgtPath = tgtPath.format(**self.Config['Gateway'])
+
+		return self.Client.upload(srcPath, tgtPath)

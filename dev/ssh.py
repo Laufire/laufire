@@ -12,18 +12,12 @@ from re import compile, sub
 
 import paramiko
 from laufire.extensions import Lazy
-from laufire.flow import forgive
 from laufire.filesys import getPathType
+from laufire.flow import forgive, retry
 from laufire.logger import debug
 from laufire.shell import assertShell
 
-# Data
-homeDirPatern = compile(r'^~/')
-
 # Helpers
-def expandPath(path, homeDir):
-	return sub(homeDirPatern, '%s/' % homeDir, path)
-
 def _upload(SFTP, localPath, remotePath):
 
 	debug('uploading %s to %s' % (localPath, remotePath))
@@ -31,7 +25,7 @@ def _upload(SFTP, localPath, remotePath):
 	pathType = getPathType(localPath)
 
 	if pathType == 1: # file
-		SFTP.put(localPath, remotePath)
+		retry(lambda: SFTP.put(localPath, remotePath) or 1) # #Note: 1 is returned to notify retry of a success.
 
 	elif pathType > 1: # dir / junction
 		err = forgive(lambda: mkdirs(SFTP, remotePath))
@@ -40,10 +34,12 @@ def _upload(SFTP, localPath, remotePath):
 			raise err
 
 		for item in listdir(localPath): # #Note: With dir uploads, the uploads are merged (added / overwritten) with existing paths.
-			_upload(SFTP, '%s/%s' % (localPath, item), '%s/%s' % (remotePath, item))
+			retry(lambda: _upload(SFTP, '%s/%s' % (localPath, item), '%s/%s' % (remotePath, item)))
 
 	else: # Path doesn't exist.
 		raise Exception('Invalid source path: %s' % localPath)
+
+	return remotePath
 
 def mkdirs(SFTP, remotePath):
 	currentPath = remotePath
@@ -78,6 +74,7 @@ def mkdirs(SFTP, remotePath):
 def getTgtName(tgtName, srcPath):
 	return tgtName if tgtName else basename(srcPath)
 
+# Classes
 class SSHClient(paramiko.SSHClient):
 	r"""An abstraction layer over the SSH client.
 	"""
@@ -87,9 +84,6 @@ class SSHClient(paramiko.SSHClient):
 		self.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 		self.load_system_host_keys()
 		self.connect(SSHConfig['host'], username=SSHConfig['username'], password=SSHConfig['password'])
-
-		self._homeDir = self.execute('echo ~')['out'].strip()
-
 		self._SFTP = self.open_sftp()
 
 	def __del__(self):
@@ -97,22 +91,27 @@ class SSHClient(paramiko.SSHClient):
 
 	def __getattr__(self, attr):
 		r"""
-		Allows the access of the methods of the underlying SFTP connection.
+		Allows to access the methods of the underlying SFTP connection.
 		"""
 		return getattr(self._SFTP, attr)
 
 	def download(self, remotePath, localPath=''):
 		debug('downloading %s to %s' % (remotePath, localPath))
 		SFTP = self.open_sftp()
-		SFTP.get(expandPath(remotePath, self._homeDir), getTgtName(localPath, remotePath))
+		localPath = getTgtName(localPath, remotePath)
+		SFTP.get(remotePath, localPath)
 		SFTP.close()
+
+		return localPath
 
 	def upload(self, localPath, remotePath):
 		remotePath = getTgtName(remotePath, localPath)
-		debug('uploading %s to %s' % (localPath, remotePath))
+
 		SFTP = self.open_sftp()
-		_upload(SFTP, localPath, expandPath(remotePath, self._homeDir))
+		_upload(SFTP, localPath, remotePath)
 		SFTP.close()
+
+		return remotePath
 
 	def exists(self, path):
 		err = forgive(lambda: self._SFTP.stat(path))
@@ -134,20 +133,31 @@ class SSHBridge:
 	r"""Bridges with the SSH gateway of the remote host.
 	"""
 	def __init__(self, Config):
-		self.GatewayConfig = Config['Gateway']
-		self.Client = Lazy(SSHClient, Config['SSH']) # #Note: SSHBridge is initialized as lazy class, as parmiko cannot connect to the server when modules are being loaded, dur to some internals of threading.
+		self.Config = Config
+		self.Client = Lazy(SSHClient, Config['SSH']) # #Note: SSHBridge is initialized as lazy class, as parmiko cannot connect to the server when modules are being loaded, due to some internals of threading.
 
-	def execute(self, command):
-		return self.Client.execute(command)
+	def __getattr__(self, attr):
+		r"""
+		Allows access to the methods of the underlying client.
+		"""
+		return getattr(self.Client, attr)
 
 	def iexecute(self, command):
 		r"""Interpolates the command with the Config, before executing.
 		"""
-		return self.Client.execute(command.format(**self.GatewayConfig))
+		return self.Client.execute(command.format(**self.Config['Gateway']))
 
 	def callScript(self, ecCommand):
-		out = assertShell(self.iexecute('cd {appDir} && {pythonPath} %s' % ecCommand))
+		out = assertShell(self.iexecute('{Python[binary]} {Paths[private]}/%s' % ecCommand))
 		return json.loads(out) if out else None
 
-	def upload(self, srcPath, tgtName=''): # #Note: Uploads are always done to the temp dir.
-		return self.Client.upload(srcPath, '%s/%s' % ('~/gateway/_temp', getTgtName(tgtName, srcPath)))
+	def upload(self, srcPath, tgtPath=''):
+		r"""Uploads through the gateway are done to the temp dir by default.
+		"""
+		if not tgtPath:
+			tgtPath = '%s/%s' % (self.Config['Gateway']['Paths']['temp'], getTgtName(None, srcPath))
+
+		else:
+			tgtPath = tgtPath.format(**self.Config['Gateway'])
+
+		return self.Client.upload(srcPath, tgtPath)

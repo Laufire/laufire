@@ -28,6 +28,8 @@ Modules
 ToDo
 ----
 
+* Review the necessity of the ops dir.
+
 * Try the package on linux.
 
 * Replace YamlEx with a generic dictionary (ordered) dictionary templater, so to allow using other data formats for interpolation.
@@ -357,3 +359,20 @@ Log
 	* 1932	Added filesys.appendContent.
 	* 1945	Improved the handling of path separators.
 	* 1948	Added filesys.getAncestor.
+
+* 170816
+
+	* 1705	SSH now uses *$HOME* instead of *~*, as the former has better support in bash.
+
+* 170817
+
+	* 1858	ssh and its mock do not support path expansions anymore, in order to make the structure robist and flexible.
+
+* 170823
+
+	* 2216	SSHBridge.GatewayConfig is now SSHBridge.Config, so is that of SSHBridgeMocker.
+
+* 170824
+
+	* 1524	SSHBridge.upload now supports templatable values.
+	* 1524	Uploads are now retried.
