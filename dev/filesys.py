@@ -8,9 +8,9 @@ Notes
 -----
 
 	* Path removals generally require an ancestor to be specified, so to avoid accidental deletes.
-	* Unlike removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur in creating recreatable resources).
+	* Unlike removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur while creating re-creatable resources).
 	* The module shutill isn't used as it treats file-system differently, than this module does. Ex: shutil.rmtree will remove the files with-in dir junctions instead of merely removing the junction.
-	* Debuging is always done with abspaths, so to give the right context (#Pending: Check: Couls this be a security issue?)
+	* Debuging is always done with abspaths, so to give the right context (#Pending: Check: Could this be a security issue?)
 
 Pending
 -------
@@ -65,7 +65,7 @@ def rmtree(tgtPath):
 
 	rmdir(tgtPath)
 
-def _makeLink(srcPath, tgtPath, pathType, hardLinks):
+def _makeLink(srcPath, tgtPath, pathType, hardLinks): # #Pending: Rename hardLinks to hardLink.
 
 	srcPath, tgtPath = abspath(srcPath), abspath(tgtPath)
 
@@ -489,8 +489,12 @@ def compress(srcPath, tgtPath, overwrite=False): # #Note: shutil.make_archive is
 	if not exists(srcPath):
 		raise('No such path: %s' % srcPath)
 
-	if not overwrite and exists(tgtPath):
-		_removePath(tgtPath)
+	if exists(tgtPath):
+		if not overwrite:
+			_removePath(tgtPath)
+
+	else:
+		ensureParent(tgtPath)
 
 	from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -548,7 +552,7 @@ def restore(backupPath, srcPath=None): #Pending: Add a way to handle time string
 def setup(Project):
 	global fsRoot
 
-	fsRoot = Project.fsRoot
+	fsRoot = abspath(Project.fsRoot)
 
 from laufire.initializer import loadProjectSettings
 loadProjectSettings(setup)

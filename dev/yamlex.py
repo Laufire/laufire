@@ -7,6 +7,7 @@ A wrapper around HiYaPyCo that supports:
 * Easier file handling.
 * Runtime variables.
 
+#Later: Allow external template sources. ie: The source data won't be in the rendered data. This passibly could be a KWArg named, env.
 """
 from hiyapyco import HiYaPyCo, dump, odyldo
 from jinja2 import Template

@@ -47,8 +47,13 @@ def collectConfigData(Attrs):
 	if 'ConfigExtensions' in Attrs:
 		Config.extend(Attrs['ConfigExtensions'])
 
+	if 'fsRoot' in Attrs:
+		from os.path import abspath
+		Config['fsRoot'] = abspath(Attrs['fsRoot'])
+
 	if 'Store' in Attrs:
-		Config.extend(Attrs['Store'].var(''))
+		Store = Attrs['Store']
+		Config.extend(Store if isinstance(Store, dict) else Store.var('')) # Note: A store could either be a dict or an ecstore.
 
 	Config.interpolate()
 
@@ -107,7 +112,7 @@ def init():
 	global Project
 	Project = _Project
 
-	Attrs = getAttrDict(Project, 'cwd', 'Paths', 'configPath', 'ConfigExtensions', 'Store', 'LoggersToSilence')
+	Attrs = getAttrDict(Project, 'cwd', 'Paths', 'configPath', 'fsRoot', 'ConfigExtensions', 'Store', 'LoggersToSilence')
 
 	setCWD(Attrs.get('cwd'))
 
@@ -124,3 +129,8 @@ def init():
 	setSettings()
 
 	return Config
+
+def stealCWD(scriptPath):
+	from os.path import dirname
+
+	setCWD(dirname(scriptPath))

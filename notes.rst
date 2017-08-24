@@ -370,6 +370,7 @@ Log
 
 * 170823
 
+	* 1420	Introduced initializer.stealCWD.
 	* 2216	SSHBridge.GatewayConfig is now SSHBridge.Config, so is that of SSHBridgeMocker.
 
 * 170824
