@@ -4,32 +4,36 @@ main
 
 	The entry point for Ops.
 """
+import os
+import re
+
+from ec.ec import arg, settings, task
+from ec.types import basics, multi
+from laufire.filesys import removePath
+
 from Project import Config
 
-from ec.ec import task, arg, group, settings
-from ec.types.basics import yn
+# Data
+Paths = Config['Paths']
+testsDir = Paths['tests']
+testFilePattern = '^test_(\\w+).py$'
+TestNames = list(re.search(testFilePattern, i).group(1) for i in os.listdir(testsDir) if re.search(testFilePattern, i))
 
-from laufire.filesys import makeLink
-from Store import Store as _Store
-
-@group(alias='s')
-class Store:
-	@task(alias='s', desc='Setup the store.')
-	@arg(alias='r', type=yn, desc='Reconfigure all data. Defaults to no.', default=False)
-	def setup(reconfigure):
-		_Store.setup(reconfigure)
-
-@task(alias='d', desc='Deploys the package to the targets from the store.')
-def deploy():
-	libPath = '../dev'
-
-	for targetParent in Config['TargetParents']:
-		makeLink(libPath, '%s/laufire' % targetParent)
+@task(alias='c')
+def cleanUp():
+	r"""Cleans up residue from the project dir.
+	"""
+	removePath(Paths['temp'])
 
 @task(alias='t')
-def test():
+@arg(type=multi.one_of(TestNames + ['*']), sep='\n\t')
+def test(testName='*', isVerbose=False):
 	r"""The task under development.
 	"""
-	pass
+	from laufire.shell import run
+
+	cleanUp()
+
+	assert run('python -m unittest discover -s "%s" -p test_%s.py -fc%s' % (Config['Paths']['tests'], testName, 'v' if isVerbose else ''), shell=True) == 0, 'Testing failed.'
 
 settings(debug=True)

@@ -1,0 +1,17 @@
+---
+Paths:
+  temp: '_temp'
+  tests: 'testing/tests'
+
+Testing:
+  FS: # Structures to help with testing file sys calls.
+    base:
+      - '.dotFile'
+      - 'file1.txt'
+      - 'file2.py'
+      - 'dir1':
+        - 'file1.txt'
+        - 'file2.py'
+      - 'dir2': {}
+      - '.dotDir':
+        - 'file1.txt'

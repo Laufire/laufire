@@ -1,14 +1,14 @@
 r"""The standard project file for the support package, laufire.
 """
-#pylint: disable=W0611
+from laufire.initializer import init, stealCWD
+from Store import Store #pylint: disable=W0611
 
-from laufire.initializer import init
-
+stealCWD(__file__)
 
 # Config
 name = 'laufire'
 
-from Store import Store
+configPath = 'data/config.yaml'
 
 devMode = True
 
