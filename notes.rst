@@ -377,3 +377,13 @@ Log
 
 	* 1524	SSHBridge.upload now supports templatable values.
 	* 1524	Uploads are now retried.
+
+* 170825
+
+	* 2300	Decided to standardize the path separator as '/', disregarding the OS. Dicrepancies will be managed internaly.
+
+* 170827
+
+	* 0140	Introduced filesys.joinPaths.
+	* 0220	Simplified the globs used in the module filesys.
+	* 0220	Rewrote filesys.collectPaths.

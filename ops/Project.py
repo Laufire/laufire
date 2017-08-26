@@ -12,5 +12,7 @@ configPath = 'data/config.yaml'
 
 devMode = True
 
+logLevel = Store['logLevel']
+
 # Init
 init() # #Note: This call will add the Config object to the module.

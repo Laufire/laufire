@@ -9,9 +9,18 @@ Testing:
       - '.dotFile'
       - 'file1.txt'
       - 'file2.py'
+      - 'file2.pyc'
       - 'dir1':
+        - '.dotFile'
         - 'file1.txt'
         - 'file2.py'
-      - 'dir2': {}
+        - 'file2.pyc'
+        - 'dir1':
+          - 'file1.txt'
+          - 'file2.py'
+          - 'file2.pyc'
+          - dir2: []
+        - 'dir2': []
+      - 'dir2': []
       - '.dotDir':
         - 'file1.txt'

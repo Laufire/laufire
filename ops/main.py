@@ -36,4 +36,4 @@ def test(testName='*', isVerbose=False):
 
 	assert run('python -m unittest discover -s "%s" -p test_%s.py -fc%s' % (Config['Paths']['tests'], testName, 'v' if isVerbose else ''), shell=True) == 0, 'Testing failed.'
 
-settings(debug=True)
+settings(debug=Config['debug'])

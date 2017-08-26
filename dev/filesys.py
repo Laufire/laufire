@@ -15,7 +15,6 @@ Notes
 Pending
 -------
 
-	* Normalize the paths before operations, as some os functionality (like resolving symlinks), rely on the path being well formed.
 	* Check: Could links be removed, even outside the fsRoot?
 	* The module doesn't handle unicode file-names. So does the package zipfile of Python2.
 	* Support file encodings.
@@ -25,7 +24,6 @@ Pending
 """
 
 import os
-import fnmatch
 import re
 
 from os import mkdir, makedirs, unlink, rmdir
@@ -45,6 +43,32 @@ sep = os.sep
 Ext2Opener = {'zip': ('zipfile', 'ZipFile'), 'gz': 'gzip'} # #Pending: Instead of having module, object pairs import objects (for that write a support module. ie: import_obj('zipfile.ZipFile')
 
 # Helpers
+def globToRe(pattern):
+	ret = r'^'
+	pattern += '|'
+
+	i = 0
+
+	while i < len(pattern) - 1:
+		c = pattern[i]
+
+		if c != '*':
+			ret += re.escape(c)
+
+		else:
+			if pattern[i + 1] != '*':
+				ret += r'[^\/]*'
+
+			else:
+				ret += r'.*'
+				i += 1
+
+		i += 1
+
+	ret += r'$'
+
+	return ret
+
 def rmtree(tgtPath):
 	r"""Removes a dir tree. It can unlink junctions (even as sub-dirs), without removing the descendant files.
 	"""
@@ -110,18 +134,26 @@ def _getOpener(ext):
 def pair(src, tgt, postFix):
 	r"""Returns a pair of the given post-fix affixed source and target paths.
 	"""
-	return '%s%s%s' % (src, sep, postFix), '%s%s%s' % (tgt, sep, postFix)
+	return join(src, postFix), join(tgt, postFix)
 
-def getPathPairs(source, target, *Includes):
+def getPathPairs(source, target, glob):
 	r"""Iterates over the given globs and yields a tuple with source and destination paths.
 	"""
 	srcLen = len(source) + 1
 
-	for Collection in collectPaths(source, Includes):
-		for filePath in ['%s%s%s' % (source, sep, item) for item in Collection]:
-			yield filePath, '%s%s%s' % (target, sep, filePath[srcLen:])
+	for Collected in collectPaths(source, glob):
+		filePath = Collected[0]
+		yield join(source, item), join(target, filePath[srcLen:])
 
 # Exports
+def joinPaths(*Paths):
+	r"""
+	Joins the given Paths.
+	"""
+	ret = '/'.joinPaths(Paths)
+
+	return ret if Paths[0] else ret[1:]
+
 def resolve(basePath, relation):
 	r"""Resolves a relative path of the given basePath.
 
@@ -147,17 +179,19 @@ def copy(srcPath, tgtPath, overwrite=False):
 
 	else:
 		ensureDir(tgtPath)
-		Dirs, Files = collectPaths(srcPath)
+		Collected = collectPaths(srcPath)
+		Dirs = [Item[0] for Item in Collected if Item[1] != 1]
+		Files = [Item[0] for Item in Collected if Item[1] == 1]
 
 		if not overwrite:
 			for dir in Dirs:
-				dir = '%s%s%s' % (tgtPath, sep, dir)
+				dir = joinPaths(tgtPath, dir)
 				debug('Creating: %s' % dir)
 				mkdir(dir)
 
 		else:
 			for dir in Dirs:
-				dir = '%s%s%s' % (tgtPath, sep, dir)
+				dir = joinPaths(tgtPath, dir)
 				if not exists(dir):
 					debug('Creating: %s' % dir)
 					mkdir(dir)
@@ -174,7 +208,7 @@ def makeLink(srcPath, tgtPath, hardLinks=False):
 
 	_makeLink(srcPath, tgtPath, pathType, hardLinks)
 
-def linkTree(srcPath, tgtPath, Includes=None, Excludes=None, **KWArgs):
+def linkTree(srcPath, tgtPath, glob, **KWArgs):
 	r"""Re-creates the structure of the source at the target by creating dirs and linking files.
 
 	KWArgs:
@@ -192,15 +226,17 @@ def linkTree(srcPath, tgtPath, Includes=None, Excludes=None, **KWArgs):
 
 	ensureDir(tgtPath)
 
-	Dirs, Files = collectPaths(srcPath, Includes, Excludes)
+	Collected = collectPaths(srcPath, glob)
+	Dirs = [Item[0] for Item in Collected if Item[1] != 1]
+	Files = [Item[0] for Item in Collected if Item[1] == 1]
 
 	if clean:
 		for dir in Dirs:
-			mkdir('%s%s%s' % (tgtPath, sep, dir))
+			mkdir(joinPaths(tgtPath, dir))
 
 	else:
 		for dir in Dirs:
-			_dir = '%s%s%s' % (tgtPath, sep, dir)
+			_dir = joinPaths(tgtPath, dir)
 
 			if not exists(_dir):
 				mkdir(_dir)
@@ -392,56 +428,51 @@ def expandGlobs(rootPath, *Patterns):
 
 	return Paths
 
-def collectPaths(base, Includes=None, Excludes=None, regex=False, followlinks=True, trimmed=True):
+def collectPaths(base='.', glob='**', regex=False, followlinks=True):
 	r"""Returns two lists containing dirs and files of the given base dir.
 
 	Args:
 		base (str): The path to scan for.
-		Includes (list): A list of globs to include, defaults to all.
-		Excludes (list): A list of globs to exclude, defaults to none.
+		glob (str): A '|' separated list of globs. Includes and excludes are separated by a '!'. Defaults to all ('**').
 		regex (bool, False): When set to True, Includes and Excludes are parsed as regular expressions, instead of as globs.
 
+	Glob guide:
+		** : anything  (including empty strings)
+		*  : anything but a slash (including empty strings)
+		other characters : as is
+
 	#From: http://stackoverflow.com/questions/5141437/filtering-os-walk-dirs-and-files
-	#Note: Includes and Excludes are not regulat globs, as they cant experss 'files at the root' as a single expression. But they do support regular expressions.
-	# #Pending: Return paths with correct os separator.
-	# #Pending: Allow non-nested traversals.
-	# #Pending: Fix: Incudes doen't work with patterns without beginning *, if the base has expandable charcters. This could be fixed by normalizing the paths.
-	# #Pending: Instead of using two lists for Includes and excludes, a single string could be used with the pattern 'Incl1|Incl2!Excl1|Excl2'. This would greatly enhance readability.
+	#Note: The globs are not regular globs. But a simplified versions.
 	"""
+	Split = [group.split('|') for group in glob.split('!')]
+	Includes, Excludes = Split[0], Split[1] if len(Split) > 1 else []
+
 	if regex:
 		includes = r'|'.join(Includes) if Includes else r'.*'
 		excludes = r'|'.join(Excludes) if Excludes else r'$.'
 
 	else:
-		# transform glob patterns to regular expressions
-		includes = r'|'.join([fnmatch.translate(x) for x in Includes]) if Includes else r'.*'
-		excludes = r'|'.join([fnmatch.translate(x) for x in Excludes]) if Excludes else r'$.'
+		# transform globs to regular expressions
+		includes = r'|'.join([globToRe(x) for x in Includes]) if Includes else r'.*'
+		excludes = r'|'.join([globToRe(x) for x in Excludes]) if Excludes else r'$.'
 
-	AllDirs = []
-	AllFiles = []
-
-	base = base.replace('\\', '/')
+	baseLen = len(base)
 
 	for root, Dirs, Files in os.walk(base, followlinks=followlinks):
 
-		# Exclude dirs.
-		Dirs[:] = [d for d in Dirs if not re.match(excludes, d)]
-		AllDirs += [(pathJoin(root, d)).replace('\\', '/') for d in Dirs]
+		prefix = root[baseLen+1:].replace('\\', '/')
 
-		# Exclude / Include files.
-		Files = [(pathJoin(root, f)).replace('\\', '/') for f in Files]
-		Files = [f for f in Files if not re.match(excludes, f)]
-		Files = [f for f in Files if re.match(includes, f)]
+		Joined = {d: join(prefix, d) for d in Dirs}
 
-		AllFiles += Files
+		Dirs[:] = [d for d, j in Joined.iteritems() if not re.match(excludes, j)] # Exclude dirs from recursion.
 
-	AllDirs = [d for d in AllDirs if re.match(includes, d)]
+		for d, j in [(d, j) for d, j in Joined.iteritems() if d in Dirs and re.match(includes, j)]: # Yield resulting dirs.
+			yield j, 2 if isdir('%s/%s' % (root, d)) else 3 # Check whether the path is a dir or a link.
 
-	if trimmed:
-		startPos = len(base) + 1
-		return [normpath(dir[startPos:]) for dir in AllDirs], [normpath(file[startPos:]) for file in AllFiles] # #Note: The base path is removed, due the posibility of it containg special characters like ~, .. etc.
+		Files = [join(prefix, f) for f in Files]
 
-	return [normpath('%s/%s' % (base, dir)) for dir in AllDirs], [normpath('%s/%s' % (base, file)) for file in AllFiles]
+		for file in [f for f in Files if not re.match(excludes, f) and re.match(includes, f)]:
+			yield file, 1
 
 def isDescendant(probableDescendant, requiredAncestor):
 	r"""Checks whether the given path is a descendant of another.

@@ -1,6 +1,9 @@
-from ec.types import multi
+from ec.types import basics, num
 from laufire.ecstore import root, var
 
 @root(filePath='data/store.db')
 class Store:
-	TargetParents = var(type=multi.multi(';', type_str='a list of paths separated by semi-colons'))
+
+	debug = var(type=basics.yn)
+
+	logLevel = var(type=num.between(1, 5))
