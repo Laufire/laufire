@@ -13,6 +13,7 @@ if system != 'Windows':
 	from os.path import isdir, islink
 
 	# Exports
+	# #Note: This calls won't be available on Windows.
 	from os import link, symlink #pylint: disable=W0611
 
 	rmlink = unlink

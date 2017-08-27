@@ -387,3 +387,14 @@ Log
 	* 0140	Introduced filesys.joinPaths.
 	* 0220	Simplified the globs used in the module filesys.
 	* 0220	Rewrote filesys.collectPaths.
+	* 0243	Dumped filesys.expandGlobs, to avoid having two glob standards within the same module.
+	* 2200	Decided to choose file safety over performance. Thus, every remove and write call would ensure the safety of the target before proceeding. It would be applied through an option named *autoClean* with every such function.
+
+* 170828
+
+	* 0325	Restructured the module filesys to be more simple and safe.
+	* 0325	Many functions of the module, filesys got a new argument *autoClean*, which defaults to true and eases file-modifications within the fsRoot and makes the modifications out of it tougher.
+	* 0325	Renamed the filesys option *hardLinks* to *hardLink*, as a verb.
+	* 0325	Reordered and categorized the functions of the module, filesys.
+	* 0325	Introduced filesys.requireAncestor, makeDir and stdPath.
+	* 0355	filesys.copy now support patterns.

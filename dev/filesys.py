@@ -8,9 +8,13 @@ Notes
 -----
 
 	* Path removals generally require an ancestor to be specified, so to avoid accidental deletes.
-	* Unlike removals, replacements (like copy, makeLink etc) doesn't require an ancestor, as the possibilty of loss is little (as most replacements, practically occur while creating re-creatable resources).
-	* The module shutill isn't used as it treats file-system differently, than this module does. Ex: shutil.rmtree will remove the files with-in dir junctions instead of merely removing the junction.
-	* Debuging is always done with abspaths, so to give the right context (#Pending: Check: Could this be a security issue?)
+	* Many calls remove the target by default; these might not work outside the fsRoot; use removePath with requiredAncestor to achieve the same effect.
+	* The module shutill isn't used as, some of its operations could be dangerous. Ex: shutil.rmtree will remove the files with-in dir junctions instead of merely removing the junction.
+
+Caution
+-------
+
+	* Debugging absolute paths could be a security risk. Hence set the appropriate logLevel.
 
 Pending
 -------
@@ -29,11 +33,10 @@ import re
 from os import mkdir, makedirs, unlink, rmdir
 from os.path import abspath, basename, commonprefix, dirname, exists, isdir, isfile, join as pathJoin, normpath, split as pathSplit, splitext
 
+from laufire.flow import forgive
 from laufire.logger import debug
 from laufire.utils import getRandomString, getTimeString
 from laufire.helpers.filesys import link, symlink, rmlink, isLinkedDir
-
-from glob2 import glob
 
 # State
 fsRoot = '.' # Risky filesystem operations such as removePath are limited to fsRoot.
@@ -69,16 +72,18 @@ def globToRe(pattern):
 
 	return ret
 
+makeMissingDir = lambda path: exists(path) or makeDir(path)
+
 def rmtree(tgtPath):
 	r"""Removes a dir tree. It can unlink junctions (even as sub-dirs), without removing the descendant files.
 	"""
 	absPath = abspath(tgtPath)
 
-	for root, dirs, Files in os.walk(absPath):
+	for root, Dirs, Files in os.walk(absPath):
 		for file in Files:
 			unlink(pathJoin(root, file))
 
-		for dir in dirs:
+		for dir in Dirs:
 			dir = pathJoin(root, dir)
 
 			if isLinkedDir(dir):
@@ -89,17 +94,10 @@ def rmtree(tgtPath):
 
 	rmdir(tgtPath)
 
-def _makeLink(srcPath, tgtPath, pathType, hardLinks): # #Pending: Rename hardLinks to hardLink.
+def _makeLink(srcPath, tgtPath, pathType, hardLink):
+	debug('link: %s => %s' % (srcPath, tgtPath))
 
-	srcPath, tgtPath = abspath(srcPath), abspath(tgtPath)
-
-	debug('linking: %s => %s' % (srcPath, tgtPath))
-
-	if pathType == 1:
-		(link if hardLinks else symlink)(srcPath, tgtPath)
-
-	else:
-		symlink(srcPath, tgtPath) # #Note: Dirs can't be hard-linked.
+	(link if hardLink and pathType == 1 else symlink)(abspath(srcPath), tgtPath) # #Note: Dirs can't be hard-linked.
 
 def _removePath(tgtPath):
 	if isfile(tgtPath):
@@ -131,26 +129,20 @@ def _getOpener(ext):
 	else:
 		return lambda filePath: open(filePath, 'rb')
 
+# Exports
+## Path functions
+stdPath = (lambda path: path.replace('\\', '/')) if sep != '/' else lambda path: path # Standardizes the given path.
+
 def pair(src, tgt, postFix):
 	r"""Returns a pair of the given post-fix affixed source and target paths.
 	"""
-	return join(src, postFix), join(tgt, postFix)
+	return joinPaths(src, postFix), joinPaths(tgt, postFix)
 
-def getPathPairs(source, target, glob):
-	r"""Iterates over the given globs and yields a tuple with source and destination paths.
-	"""
-	srcLen = len(source) + 1
-
-	for Collected in collectPaths(source, glob):
-		filePath = Collected[0]
-		yield join(source, item), join(target, filePath[srcLen:])
-
-# Exports
 def joinPaths(*Paths):
 	r"""
 	Joins the given Paths.
 	"""
-	ret = '/'.joinPaths(Paths)
+	ret = '/'.join(Paths)
 
 	return ret if Paths[0] else ret[1:]
 
@@ -163,167 +155,30 @@ def resolve(basePath, relation):
 	"""
 	return abspath(pathJoin(basePath, relation))
 
-def copy(srcPath, tgtPath, overwrite=False):
-	r"""Copies one path to the other.
-	"""
-	srcPath = abspath(srcPath)
-	tgtPath = abspath(tgtPath)
-
-	if not overwrite:
-		_removePath(tgtPath) # #Note: The target is not removed unless the source is valid.
-
-	ensureParent(tgtPath)
-
-	if getPathType(srcPath) == 1:
-		copyContent(srcPath, tgtPath)
-
-	else:
-		ensureDir(tgtPath)
-		Collected = collectPaths(srcPath)
-		Dirs = [Item[0] for Item in Collected if Item[1] != 1]
-		Files = [Item[0] for Item in Collected if Item[1] == 1]
-
-		if not overwrite:
-			for dir in Dirs:
-				dir = joinPaths(tgtPath, dir)
-				debug('Creating: %s' % dir)
-				mkdir(dir)
-
-		else:
-			for dir in Dirs:
-				dir = joinPaths(tgtPath, dir)
-				if not exists(dir):
-					debug('Creating: %s' % dir)
-					mkdir(dir)
-
-		for file in Files:
-			copyContent(*pair(srcPath, tgtPath, file))
-
-def makeLink(srcPath, tgtPath, hardLinks=False):
-	r"""Links two paths. Files are hard linked, where as dirs are linked as junctions.
-	"""
-	pathType = getPathType(srcPath)
-	_removePath(tgtPath)
-	ensureParent(tgtPath)
-
-	_makeLink(srcPath, tgtPath, pathType, hardLinks)
-
-def linkTree(srcPath, tgtPath, glob, **KWArgs):
-	r"""Re-creates the structure of the source at the target by creating dirs and linking files.
-
-	KWArgs:
-		hardLinks (boolean): Uses hard links for linking.
-		clean (boolean): Cleans the target dir before linking.
-	"""
-	hardLinks = KWArgs.get('hardLinks', True)
-
-	clean = KWArgs.get('clean', True)
-
-	if clean:
-		removePath(tgtPath) # #Pending: Fix: removePath prevents linkTree from being used on dirs outside fsRoot, as a requiredAncestor cannot be specified.
-
-	linker = symlink if not hardLinks else link # #Pending: Check: Should hardLinks be the default, as they cannot be used across drives?
-
-	ensureDir(tgtPath)
-
-	Collected = collectPaths(srcPath, glob)
-	Dirs = [Item[0] for Item in Collected if Item[1] != 1]
-	Files = [Item[0] for Item in Collected if Item[1] == 1]
-
-	if clean:
-		for dir in Dirs:
-			mkdir(joinPaths(tgtPath, dir))
-
-	else:
-		for dir in Dirs:
-			_dir = joinPaths(tgtPath, dir)
-
-			if not exists(_dir):
-				mkdir(_dir)
-
-	_srcPath = abspath(srcPath) # Link sources should be abs-paths.
-
-	for file in Files:
-		Pair = pair(_srcPath, abspath(tgtPath), file)
-
-		tgtFilePath = Pair[1]
-		ensureParent(tgtFilePath)
-
-		if not clean and exists(tgtFilePath):
-			unlink(tgtFilePath)
-
-		debug('linking: %s => %s' % Pair)
-		linker(*Pair)
-
-def removePath(tgtPath, requiredAncestor=None, forced=False):
-	r"""Removes any given file / dir / junction.
-
-	Args:
-		tgtPath (path): The path to remove.
-		requiredAncestor (path): The target will only be removed if it's a descendant of this dir. Defaults to the global attr fsRoot.
-		forced (bool): When set to true, an ancestor won't be required.
-	"""
-	if not forced:
-		tgtPath = abspath(tgtPath)
-		requiredAncestor = abspath(requiredAncestor or fsRoot)
-
-		if not isDescendant(tgtPath, requiredAncestor):
-			raise Exception('"%s" is not a descendant of "%s"' % (tgtPath, requiredAncestor))
-
-	debug('removePath: %s' % tgtPath)
-	return _removePath(tgtPath)
-
-def rename(srcPath, tgtPath, requiredAncestor=None, forced=False):
-	r"""Renames any given file / dir / junction.
-
-	Args:
-		Args:
-		srcPath (path): The path to rename.
-		tgtPath (path): The target of the rename.
-		requiredAncestor (path): The target will only be renamed if it's a descendant of this dir. Defaults to the global attr fsRoot.
-		forced (bool): When set to true, an ancestor won't be required.
-	"""
-	removePath(tgtPath, requiredAncestor, forced)
-	os.rename(srcPath, tgtPath)
-
-def ensureParent(childPath):
-	r"""Ensures the parent dir of the given childPathexists.
-
-		This function is provided to ease the use of other file copying tasks.
-
-		#Note: makedirs isn't used, as it doesn't report properly on occupied names.
-	"""
-	parentPath = dirname(normpath(childPath))
-	Paths = []
-
-	while parentPath and not isContainer(parentPath):
-		assert not exists(parentPath), 'Parent path is occupied: %s'% parentPath
-		Paths.insert(0, parentPath)
-		parentPath = dirname(parentPath)
-
-	for path in Paths:
-		mkdir(path)
-
-def ensureDir(dir):
-	r"""Ensures that the given dir is available.
-	"""
-	if not exists(dir):
-		ensureParent(dir)
-		mkdir(dir)
-
-def ensureCleanDir(dir, requiredAncestor=None):
-	r"""Ensures that the given dir is clean and available.
-	"""
-	removePath(dir, requiredAncestor)
-	makedirs(dir)
-
 def getFreeFilePath(parentDir, length=8):
 	if exists(parentDir):
 		while True:
-			freePath = pathJoin(parentDir, getRandomString(length))
+			freePath = joinPaths(parentDir, getRandomString(length))
 
 			if not exists(freePath):
 				return freePath
+
+def getPathType(path):
+	r"""#Note: The path-types are:
+		0: missing
+		1: file
+		2: dir
+		3: linked dir
+	"""
+	ret = 3
+
+	for func in [isLinkedDir, isdir, isfile]:
+		if func(path):
+			break
+
+		ret -= 1
+
+	return ret
 
 def isLocked(filePath, tempPath=None): # #Pending: Check, whether there is a proper and robust way to check the lock status, instead of renaming the path.
 	r"""Checks whether the given path is locked.
@@ -345,43 +200,220 @@ def isLocked(filePath, tempPath=None): # #Pending: Check, whether there is a pro
 
 	return False
 
-def getContent(filePath):
-	r"""Reads a file and returns its content.
+def isContainer(path):
+	return isdir(path) or isLinkedDir(path)
+
+def isDescendant(probableDescendant, requiredAncestor):
+	r"""Checks whether the given path is a descendant of another.
+
+	Args:
+		probableDescendant (str): The absolute path of the probable descendant.
+		requiredAncestor (str): The absolute path of the required ancestor.
 	"""
-	return open(filePath, 'rb').read()
+	requiredAncestor = abspath(requiredAncestor)
 
-def iterateContent(filePath, width=4096):
-	r"""Reads the given file as small chunks. This could be used to read large files without buffer overruns.
+	return commonprefix([abspath(probableDescendant), requiredAncestor]) == requiredAncestor
+
+def requireAncestor(path, requiredAncestor=None):
+	r"""Ensures that the given path is a decendant of the required ancestor.
 	"""
-	with open(filePath, 'rb') as file:
-		for chunk in iter(lambda: file.read(width), b''):
-			yield chunk
+	ancestor = requiredAncestor or fsRoot
 
-def setContent(filePath, content):
-	r"""Fills the given file with the given content.
-	"""
-	ensureParent(filePath)
-	open(filePath, 'wb').write(content)
+	if not isDescendant(path, ancestor):
+		raise Exception('"%s" is not a descendant of "%s"' % (path, ancestor))
 
-def appendContent(filePath, content):
-	r"""Appends the given file with the given content.
-	"""
-	if not exists(filePath):
-		return setContent(filePath, content)
-
-	open(filePath, 'ab').write(content)
-
-def copyContent(srcPath, tgtPath):
+def getAncestor(path, ancestorName):
 	r"""
-	Copies the content of one file to another.
-
-	# #Note: Unlike shutil.copy attributes aren't copied.
+	Returns the first ancestor of the given path, which has the given name.
 	"""
-	debug('Copying: %s => %s' % (srcPath, tgtPath))
-	with open(tgtPath, 'wb') as tgt:
-		for chunk in iterateContent(srcPath):
-			tgt.write(chunk)
+	Lineage = abspath(path).split(sep)
+	l = len(Lineage)
 
+	while l:
+		l -= 1
+
+		if Lineage[l] != ancestorName:
+			continue
+
+		return joinPaths(*Lineage[:l + 1])
+
+def collectPaths(base='.', pattern='**', regex=False, followlinks=True):
+	r"""Returns two lists containing dirs and files of the given base dir.
+
+	Args:
+		base (str): The path to scan for.
+		pattern:
+			(glob): A '|' separated list of globs. Includes and excludes are separated by a '!'. Defaults to all ('**').
+			(regex): A '|' separated list of regex. Includes and excludes are separated by a '$$$'. Defaults to all ('.*').
+		regex (bool, False): When set to True, Includes and Excludes are parsed as regular expressions, instead of as globs.
+
+	Glob guide:
+		** : anything  (including empty strings)
+		*  : anything but a slash (including empty strings)
+		other characters : as is
+
+	#From: http://stackoverflow.com/questions/5141437/filtering-os-walk-dirs-and-files
+	#Note: The globs are not regular globs. But a simplified versions.
+	#Note: Exclusions override inclusions.
+	"""
+	if regex:
+		Split = pattern.split('$$$')
+		includes = Split[0] or r'.*'
+		excludes = Split[1] if len(Split) > 1 else None
+
+	else:
+		# transform globs to regular expressions
+		Split = pattern.split('!')
+		includes = r'|'.join([globToRe(x) for x in Split[0].split('|')]) if Split else r'.*'
+		excludes = r'|'.join([globToRe(x) for x in Split[1].split('|')]) if len(Split) > 1 else None
+
+	baseLen = len(base)
+	match = re.match
+
+	for root, Dirs, Files in os.walk(base, followlinks=followlinks):
+
+		prefix = stdPath(root[baseLen+1:])
+
+		Joined = {d: joinPaths(prefix, d) for d in Dirs}
+
+		if excludes:
+			Dirs[:] = [d for d, j in Joined.iteritems() if not match(excludes, j)] # Exclude dirs from recursion.
+
+		for d, j in [(d1, j1) for d1, j1 in Joined.iteritems() if d1 in Dirs and match(includes, j1)]: # Yield resulting dirs.
+			yield j, 2 if isdir('%s/%s' % (root, d)) else 3 # Check whether the path is a dir or a link.
+
+		Files = [joinPaths(prefix, f) for f in Files]
+
+		for file in [f for f in Files if not (excludes and match(excludes, f)) and match(includes, f)]:
+			yield file, 1
+
+def getPathPairs(source, target, pattern='**', regex=False):
+	r"""Iterates over the given patterns and yields a tuple with source and destination paths.
+	"""
+	for Collected in collectPaths(source, pattern, regex):
+		yield pair(source, target, Collected[0])
+
+## File manipulation functions
+def removePath(tgtPath, requiredAncestor=None, forced=False):
+	r"""Removes any given file / dir / junction.
+
+	Args:
+		tgtPath (path): The path to remove.
+		requiredAncestor (path): The target will only be removed if it's a descendant of this dir. Defaults to the global attr fsRoot.
+		forced (bool): When set to true, an ancestor won't be required.
+	"""
+	if not forced:
+		requireAncestor(tgtPath, requiredAncestor)
+
+	debug('remove: %s' % tgtPath)
+	return _removePath(tgtPath)
+
+def makeDir(path):
+	debug('making: %s' % path)
+	mkdir(path)
+
+def makeLink(srcPath, tgtPath, autoClean=True, hardLink=False):
+	r"""Links the given paths.
+	"""
+	if autoClean:
+		removePath(tgtPath)
+
+	pathType = getPathType(srcPath)
+
+	if not pathType:
+		ensureParent(tgtPath)
+
+	_makeLink(srcPath, tgtPath, pathType, hardLink)
+
+def rename(srcPath, tgtPath, autoClean=True):
+	r"""Renames any given file / dir / junction.
+	"""
+	if autoClean:
+		removePath(tgtPath)
+
+	debug('rename: %s => %s' % (srcPath, tgtPath))
+
+	os.rename(srcPath, tgtPath)
+
+def copy(srcPath, tgtPath, pattern='**', regex=False, autoClean=True):
+	r"""Copies one path to another.
+	"""
+	debug('copy: %s => %s' % (srcPath, tgtPath))
+
+	if autoClean:
+		removePath(tgtPath) # #Note: This also ensures that the target is under fsRoot.
+
+	pathType = getPathType(srcPath)
+
+	if not pathType:
+		ensureParent(tgtPath)
+
+	if pathType == 1:
+		copyContent(srcPath, tgtPath)
+
+	else:
+		makeMissingDir(tgtPath)
+		dirMaker = makeDir if autoClean else makeMissingDir
+
+		for Path in collectPaths(srcPath, pattern, regex):
+			if Path[1] != 1:
+				dirMaker(joinPaths(tgtPath, Path[0]))
+
+			else:
+				copyContent(*pair(srcPath, tgtPath, Path[0]))
+
+def linkTree(srcPath, tgtPath, pattern='**', regex=False, autoClean=True, hardLink=False):
+	r"""Re-creates the structure of the source at the target by creating dirs and linking files.
+	"""
+	(ensureCleanDir if autoClean else ensureDir)(tgtPath)
+
+	_srcPath = abspath(srcPath) # Link sources should be abs-paths.
+	dirMaker = makeDir if autoClean else makeMissingDir
+	linkWorker = link if hardLink else symlink # Hard links aren't the default, as they can't work across drives.
+	linker = linkWorker if autoClean else lambda srcPath, tgtPath: removePath(tgtPath) + linkWorker(srcPath, tgtPath)
+
+	for Path in collectPaths(srcPath, pattern, regex):
+		if Path[1] != 1:
+			dirMaker(joinPaths(tgtPath, Path[0]))
+
+		else:
+			path = Path[0]
+			_tgtPath = joinPaths(tgtPath, path)
+			debug('link: %s => %s' % (joinPaths(srcPath, path), _tgtPath))
+			linker(joinPaths(_srcPath, path), _tgtPath)
+
+def ensureParent(childPath):
+	r"""Ensures the parent dir of the given childPathexists.
+
+		This function is provided to ease the use of other file copying tasks.
+
+		#Note: makedirs isn't used, as it doesn't report properly on occupied names.
+	"""
+	parentPath = dirname(normpath(childPath))
+	Paths = []
+
+	while parentPath and not isContainer(parentPath):
+		assert not exists(parentPath), 'Parent path is occupied: %s'% parentPath # The path is occupieed by a file / link.
+		Paths.insert(0, parentPath)
+		parentPath = dirname(parentPath)
+
+	for path in Paths:
+		makeDir(path)
+
+def ensureDir(dir):
+	r"""Ensures that the given dir is available.
+	"""
+	if not exists(dir):
+		ensureParent(dir)
+		makeDir(dir)
+
+def ensureCleanDir(dir, requiredAncestor=None):
+	r"""Ensures that the given dir is clean and available.
+	"""
+	removePath(dir, requiredAncestor)
+	makedirs(dir)
+
+## Content Functions
 def getLines(filePath, start=-1, end=-1, ext=None, Args=None):
 	r"""Yields lines from various file formats like zip, gzip etc.
 	"""
@@ -408,124 +440,51 @@ def getLines(filePath, start=-1, end=-1, ext=None, Args=None):
 			else:
 				break
 
-def expandGlobs(rootPath, *Patterns):
-	r"""Expands a set of patterns for a given rootPath.
-
-	Note:
-		rootPath could be a file or a dir.
-		('**', '.*', '.*/**', '.*/.**') is the glob pattern for a collection all files.
+def getContent(filePath):
+	r"""Reads a file and returns its content.
 	"""
-	from glob2 import glob
+	return open(filePath, 'rb').read()
 
-	Paths = []
-
-	if Patterns:
-		for pattern in Patterns:
-			Paths += glob(pathJoin(rootPath, pattern))
-
-	else: # We haven't got any patterns hence return the rootPath if it exists
-		return [rootPath] if exists(rootPath) else []
-
-	return Paths
-
-def collectPaths(base='.', glob='**', regex=False, followlinks=True):
-	r"""Returns two lists containing dirs and files of the given base dir.
-
-	Args:
-		base (str): The path to scan for.
-		glob (str): A '|' separated list of globs. Includes and excludes are separated by a '!'. Defaults to all ('**').
-		regex (bool, False): When set to True, Includes and Excludes are parsed as regular expressions, instead of as globs.
-
-	Glob guide:
-		** : anything  (including empty strings)
-		*  : anything but a slash (including empty strings)
-		other characters : as is
-
-	#From: http://stackoverflow.com/questions/5141437/filtering-os-walk-dirs-and-files
-	#Note: The globs are not regular globs. But a simplified versions.
+def iterateContent(filePath, width=4096):
+	r"""Reads the given file as small chunks. This could be used to read large files without buffer overruns.
 	"""
-	Split = [group.split('|') for group in glob.split('!')]
-	Includes, Excludes = Split[0], Split[1] if len(Split) > 1 else []
+	with open(filePath, 'rb') as file:
+		for chunk in iter(lambda: file.read(width), b''):
+			yield chunk
 
-	if regex:
-		includes = r'|'.join(Includes) if Includes else r'.*'
-		excludes = r'|'.join(Excludes) if Excludes else r'$.'
-
-	else:
-		# transform globs to regular expressions
-		includes = r'|'.join([globToRe(x) for x in Includes]) if Includes else r'.*'
-		excludes = r'|'.join([globToRe(x) for x in Excludes]) if Excludes else r'$.'
-
-	baseLen = len(base)
-
-	for root, Dirs, Files in os.walk(base, followlinks=followlinks):
-
-		prefix = root[baseLen+1:].replace('\\', '/')
-
-		Joined = {d: join(prefix, d) for d in Dirs}
-
-		Dirs[:] = [d for d, j in Joined.iteritems() if not re.match(excludes, j)] # Exclude dirs from recursion.
-
-		for d, j in [(d, j) for d, j in Joined.iteritems() if d in Dirs and re.match(includes, j)]: # Yield resulting dirs.
-			yield j, 2 if isdir('%s/%s' % (root, d)) else 3 # Check whether the path is a dir or a link.
-
-		Files = [join(prefix, f) for f in Files]
-
-		for file in [f for f in Files if not re.match(excludes, f) and re.match(includes, f)]:
-			yield file, 1
-
-def isDescendant(probableDescendant, requiredAncestor):
-	r"""Checks whether the given path is a descendant of another.
-
-	Args:
-		requiredAncestor (str): The absolute path of the required ancestor.
-		probableDescendant (str): The absolute path of the probable descendant.
+def setContent(filePath, content, autoClean=True):
+	r"""Fills the given file with the given content.
 	"""
-	requiredAncestor = abspath(requiredAncestor)
+	if ((removePath(filePath) == 1) if autoClean else True): # Ensure parent only if the path is not removed.
+		ensureParent(filePath)
 
-	return commonprefix([abspath(probableDescendant), requiredAncestor]) == requiredAncestor
+	open(filePath, 'wb').write(content)
 
-def getAncestor(path, ancestorName):
+def appendContent(filePath, content):
+	r"""Appends the given file with the given content.
+	"""
+	if not exists(filePath):
+		return setContent(filePath, content)
+
+	open(filePath, 'ab').write(content)
+
+def copyContent(srcPath, tgtPath):
 	r"""
-	Returns the first ancestor of the given path, which has the given name.
+	Copies the content of one file to another.
+
+	# #Note: Unlike shutil.copy attributes aren't copied.
 	"""
-	path = abspath(path)
+	debug('copy: %s => %s' % (srcPath, tgtPath))
 
-	while True:
-		ancestor = dirname(path)
+	with open(tgtPath, 'wb') as tgt:
+		for chunk in iterateContent(srcPath):
+			tgt.write(chunk)
 
-		if not ancestor or ancestor == path:
-			return
-
-		if basename(ancestor) == ancestorName:
-			return ancestor
-
-		path = ancestor
-
-def isContainer(path):
-	return isdir(path) or isLinkedDir(path)
-
-def getPathType(path):
-	ret = 1
-
-	for func in [isfile, isdir, isLinkedDir]:
-		if func(path):
-			break
-
-		ret += 1
-
-	return ret
-
-def compress(srcPath, tgtPath, overwrite=False): # #Note: shutil.make_archive isn't used, due to its forcing of the zip extension and due to the need for maintaing a compression standard.
+def compress(srcPath, tgtPath): # #Note: shutil.make_archive isn't used, due to its forcing of the zip extension and due to the need for maintaing a compression standard.
 	if not exists(srcPath):
 		raise('No such path: %s' % srcPath)
 
-	if exists(tgtPath):
-		if not overwrite:
-			_removePath(tgtPath)
-
-	else:
-		ensureParent(tgtPath)
+	ensureParent(tgtPath)
 
 	from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -550,7 +509,7 @@ def compress(srcPath, tgtPath, overwrite=False): # #Note: shutil.make_archive is
 
 	ZipFileObj.close()
 
-def extract(srcPath, tgtPath): # #Note: The tagertPath points to the extraction root, hence it should be a dir.
+def extract(srcPath, tgtPath): # #Note: The tagertPath points to the extraction root. Hence, it should be a dir.
 	from zipfile import ZipFile
 
 	with ZipFile(srcPath, 'r') as Z:
@@ -583,7 +542,10 @@ def restore(backupPath, srcPath=None): #Pending: Add a way to handle time string
 def setup(Project):
 	global fsRoot
 
-	fsRoot = abspath(Project.fsRoot)
+	_temp = Project.fsRoot
+
+	fsRoot = abspath(_temp)
+	debug('fsRoot: %s' % _temp)
 
 from laufire.initializer import loadProjectSettings
 loadProjectSettings(setup)

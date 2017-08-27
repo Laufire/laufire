@@ -27,13 +27,20 @@ def cleanUp():
 
 @task(alias='t')
 @arg(type=multi.one_of(TestNames + ['*']), sep='\n\t')
-def test(testName='*', isVerbose=False):
+@arg(type=basics.yn)
+@arg(type=basics.yn)
+def test(testName='*', isVerbose=False, debug=False):
 	r"""The task under development.
 	"""
 	from laufire.shell import run
 
 	cleanUp()
 
-	assert run('python -m unittest discover -s "%s" -p test_%s.py -fc%s' % (Config['Paths']['tests'], testName, 'v' if isVerbose else ''), shell=True) == 0, 'Testing failed.'
+	if debug:
+		testFile = ('%s/test_%s.py' % (Config['Paths']['tests'], testName)) if testName != '*' else ''
+		assert run('nosetests -vsx --pdb %s' % testFile, shell=True) == 0, 'Testing failed.'
+
+	else:
+		assert run('python -m unittest discover -s "%s" -p test_%s.py -fc%s' % (Config['Paths']['tests'], testName, 'v' if isVerbose else ''), shell=True) == 0, 'Testing failed.'
 
 settings(debug=Config['debug'])
