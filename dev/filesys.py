@@ -10,6 +10,8 @@ Notes
 	* Path removals generally require an ancestor to be specified, so to avoid accidental deletes.
 	* Many calls remove the target by default; these might not work outside the fsRoot; use removePath with requiredAncestor to achieve the same effect.
 	* The module shutill isn't used as, some of its operations could be dangerous. Ex: shutil.rmtree will remove the files with-in dir junctions instead of merely removing the junction.
+	* To avoid conflicts while writing outside the fsRoot, remove the target first.
+	* Soft links (symlinks) are the default as they are more robust (they work even after the source is replaced).
 
 Caution
 -------
@@ -20,11 +22,11 @@ Pending
 -------
 
 	* Check: Could links be removed, even outside the fsRoot?
-	* The module doesn't handle unicode file-names. So does the package zipfile of Python2.
+	* The module doesn't handle unicode file-names. So does the package zipfile of Python2. It depends upon the type of the input path strings. ie: To call collectPaths on a dir with an unicode file name, the source dir should also be in unicode.
 	* Support file encodings.
 	* Add a function to copy file attributes, etc.
 	* Add an isOk call to verify the correctness of the files (to avoid unresolved links etc).
-	* Use absPaths for robustness of the calls.
+	* Check: Use absPaths for robustness of the calls.
 """
 
 import os
@@ -99,7 +101,10 @@ def _makeLink(srcPath, tgtPath, pathType, hardLink):
 
 	(link if hardLink and pathType == 1 else symlink)(abspath(srcPath), tgtPath) # #Note: Dirs can't be hard-linked.
 
-def _removePath(tgtPath):
+def _removePath(tgtPath): # #Pending: Check if the call could be made more efficient.
+	if not exists(tgtPath):
+		return 1
+
 	if isfile(tgtPath):
 		unlink(tgtPath)
 
@@ -129,9 +134,12 @@ def _getOpener(ext):
 	else:
 		return lambda filePath: open(filePath, 'rb')
 
+def doNoting(*dummy, **dummy1):
+	pass
+
 # Exports
 ## Path functions
-stdPath = (lambda path: path.replace('\\', '/')) if sep != '/' else lambda path: path # Standardizes the given path.
+stdPath = (lambda path: path.replace('\\', '/')) if sep != '/' else doNoting # Standardizes the given path.
 
 def pair(src, tgt, postFix):
 	r"""Returns a pair of the given post-fix affixed source and target paths.
@@ -290,8 +298,8 @@ def collectPaths(base='.', pattern='**', regex=False, followlinks=True):
 def getPathPairs(source, target, pattern='**', regex=False):
 	r"""Iterates over the given patterns and yields a tuple with source and destination paths.
 	"""
-	for Collected in collectPaths(source, pattern, regex):
-		yield pair(source, target, Collected[0])
+	for path, dummy in collectPaths(source, pattern, regex):
+		yield pair(source, target, path)
 
 ## File manipulation functions
 def removePath(tgtPath, requiredAncestor=None, forced=False):
@@ -318,12 +326,9 @@ def makeLink(srcPath, tgtPath, autoClean=True, hardLink=False):
 	if autoClean:
 		removePath(tgtPath)
 
-	pathType = getPathType(srcPath)
+	ensureParent(tgtPath)
 
-	if not pathType:
-		ensureParent(tgtPath)
-
-	_makeLink(srcPath, tgtPath, pathType, hardLink)
+	_makeLink(srcPath, tgtPath, getPathType(srcPath), hardLink)
 
 def rename(srcPath, tgtPath, autoClean=True):
 	r"""Renames any given file / dir / junction.
@@ -352,25 +357,28 @@ def copy(srcPath, tgtPath, pattern='**', regex=False, autoClean=True):
 		copyContent(srcPath, tgtPath)
 
 	else:
-		makeMissingDir(tgtPath)
 		dirMaker = makeDir if autoClean else makeMissingDir
+		copier = lambda src, tgt: copyContent(src, tgt, autoClean=False) if autoClean or not exists(tgtPath) else copyContent # File safety isn't a concern inside a missing dir.
+
+		makeMissingDir(tgtPath)
 
 		for Path in collectPaths(srcPath, pattern, regex):
 			if Path[1] != 1:
 				dirMaker(joinPaths(tgtPath, Path[0]))
 
 			else:
-				copyContent(*pair(srcPath, tgtPath, Path[0]))
+				copier(*pair(srcPath, tgtPath, Path[0]))
 
 def linkTree(srcPath, tgtPath, pattern='**', regex=False, autoClean=True, hardLink=False):
 	r"""Re-creates the structure of the source at the target by creating dirs and linking files.
 	"""
-	(ensureCleanDir if autoClean else ensureDir)(tgtPath)
-
 	_srcPath = abspath(srcPath) # Link sources should be abs-paths.
 	dirMaker = makeDir if autoClean else makeMissingDir
 	linkWorker = link if hardLink else symlink # Hard links aren't the default, as they can't work across drives.
-	linker = linkWorker if autoClean else lambda srcPath, tgtPath: removePath(tgtPath) + linkWorker(srcPath, tgtPath)
+	linker = linkWorker if autoClean or not exists(tgtPath) else lambda srcPath, tgtPath: (removePath(tgtPath), linkWorker(srcPath, tgtPath)) # File safety isn't a concern inside a missing dir.
+	parentMaker = ensureParent if pattern != '**' and regex == False else doNoting
+
+	(ensureCleanDir if autoClean else ensureDir)(tgtPath)
 
 	for Path in collectPaths(srcPath, pattern, regex):
 		if Path[1] != 1:
@@ -380,6 +388,7 @@ def linkTree(srcPath, tgtPath, pattern='**', regex=False, autoClean=True, hardLi
 			path = Path[0]
 			_tgtPath = joinPaths(tgtPath, path)
 			debug('link: %s => %s' % (joinPaths(srcPath, path), _tgtPath))
+			parentMaker(_tgtPath)
 			linker(joinPaths(_srcPath, path), _tgtPath)
 
 def ensureParent(childPath):
@@ -393,7 +402,7 @@ def ensureParent(childPath):
 	Paths = []
 
 	while parentPath and not isContainer(parentPath):
-		assert not exists(parentPath), 'Parent path is occupied: %s'% parentPath # The path is occupieed by a file / link.
+		assert not exists(parentPath), 'Parent path is occupied: %s'% parentPath # The path is occupied by a file / link.
 		Paths.insert(0, parentPath)
 		parentPath = dirname(parentPath)
 
@@ -455,7 +464,7 @@ def iterateContent(filePath, width=4096):
 def setContent(filePath, content, autoClean=True):
 	r"""Fills the given file with the given content.
 	"""
-	if ((removePath(filePath) == 1) if autoClean else True): # Ensure parent only if the path is not removed.
+	if (removePath(filePath) == 1 if autoClean else True): # Ensure parent only if the path is not removed.
 		ensureParent(filePath)
 
 	open(filePath, 'wb').write(content)
@@ -468,13 +477,16 @@ def appendContent(filePath, content):
 
 	open(filePath, 'ab').write(content)
 
-def copyContent(srcPath, tgtPath):
+def copyContent(srcPath, tgtPath, autoClean=True):
 	r"""
 	Copies the content of one file to another.
 
 	# #Note: Unlike shutil.copy attributes aren't copied.
 	"""
 	debug('copy: %s => %s' % (srcPath, tgtPath))
+
+	if (removePath(tgtPath) == 1 if autoClean else True): # Ensure parent only if the path is not removed.
+		ensureParent(tgtPath)
 
 	with open(tgtPath, 'wb') as tgt:
 		for chunk in iterateContent(srcPath):

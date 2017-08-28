@@ -6,7 +6,7 @@ import re
 import unittest
 
 from laufire.logger import debug
-from laufire.filesys import abspath, collectPaths, copy, ensureCleanDir, ensureDir, fsRoot, getAncestor, isDescendant, linkTree, removePath, requireAncestor, setContent, stdPath
+from laufire.filesys import abspath, collectPaths, copy, ensureCleanDir, ensureDir, getAncestor, isDescendant, linkTree, removePath, requireAncestor, setContent, stdPath
 from laufire.flow import forgive
 from laufire.parser import parse
 
@@ -36,8 +36,8 @@ def getFSDict(prefix, Structure, Buffer):
 
 	return Buffer
 
-def getStructureDict(base, pattern='**'):
-	return {k: v for k, v in collectPaths(base, pattern)}
+def getStructureDict(base, pattern='**', excludeDirs=False):
+	return {k: v for k, v in collectPaths(base, pattern) if not excludeDirs or v == 1}
 
 def buildStructure(base, FSDict):
 	for k, v in FSDict.iteritems():
@@ -52,6 +52,10 @@ def rebuildStructures():
 	debug('Building Structures...')
 	ensureCleanDir(baseDir)
 	buildStructure(baseDir, FSDict)
+
+def testScenarios(tester, *Scenarios):
+	for Scenario in Scenarios:
+		tester(*Scenario)
 
 # Data
 FSDict = getFSDict('', TestConfig['FS']['base'], {})
@@ -103,24 +107,34 @@ class TestFileSys(unittest.TestCase):
 				) == 0, 'collectPaths failed on: %s' % collectPathsPattern
 
 		debug('Testing proper collections...')
-		ensureValidPathCollection('**', r'.*')
-		ensureValidPathCollection('*', r'[^\/]*')
-		ensureValidPathCollection('*d*', r'[^\/]*d[^\/]*')
-		ensureValidPathCollection('*.txt', r'[^\/]*\.txt')
-		ensureValidPathCollection('.*', r'\.[^\/]*')
-		ensureValidPathCollection('*.py*', r'[^\/]*\.py[^\/]*')
-		ensureValidPathCollection('**/dir1/**', r'.*\/dir1\/.*')
-		ensureValidPathCollection('*ir1/**', r'[^\/]*ir1\/.*')
-		ensureValidPathCollection('**/*ir1/**', r'.*\/[^\/]*ir1\/.*')
+		testScenarios(ensureValidPathCollection,
+
+			('**', r'.*'),
+			('*', r'[^\/]*'),
+			('*d*', r'[^\/]*d[^\/]*'),
+			('*.txt', r'[^\/]*\.txt'),
+			('**.txt', r'.*\.txt'),
+			('.*', r'\.[^\/]*'),
+			('*.py*', r'[^\/]*\.py[^\/]*'),
+			('**/dir1/**', r'.*\/dir1\/.*'),
+			('*ir1/**', r'[^\/]*ir1\/.*'),
+			('**/*ir1/**', r'.*\/[^\/]*ir1\/.*'),
+		)
 
 		debug('Testing empty collections...')
-		ensureValidPathCollection('**/*2/**', '')
-		ensureValidPathCollection('dir', '')
+		testScenarios(ensureValidPathCollection,
+
+			('**/*2/**', ''),
+			('dir', ''),
+		)
 
 		debug('Testing exclusions...')
-		ensureValidPathCollection('**!**', r'.*', True)
-		ensureValidPathCollection('**!*.txt', r'[^\/]*\.txt', True)
-		ensureValidPathCollection('*!*fi*.tx*', r'.*\/.*|[^\/]*fi[^\/]*\.tx[^\/]*', True)
+		testScenarios(ensureValidPathCollection,
+
+			('**!**', r'.*', True),
+			('**!*.txt', r'[^\/]*\.txt', True),
+			('*!*fi*.tx*', r'.*\/.*|[^\/]*fi[^\/]*\.tx[^\/]*', True),
+		)
 
 	def test_copy(self): # #Pending: Test all the argument combinations.
 		rebuildStructures()
@@ -140,6 +154,10 @@ class TestFileSys(unittest.TestCase):
 		removePath(target)
 
 		debug('Testing patterns...')
-		pattern = '**!**.txt'
-		linkTree(baseDir, target, pattern)
-		assert cmp(getStructureDict(baseDir, pattern), getStructureDict(target)) == 0, 'The structures do not match.'
+
+		def testPattern(pattern, excludeDirs=False):
+			linkTree(baseDir, target, pattern)
+			assert cmp(getStructureDict(baseDir, pattern), getStructureDict(target, excludeDirs=excludeDirs)) == 0, 'The structures do not match.' # #Note: pattern isn't fed into getStructureDict(target) to avoid mirror bias (those calls that go wrong on both sides, thus equate and pass).
+
+		testPattern('**!**.txt')
+		testPattern('**.txt', True)

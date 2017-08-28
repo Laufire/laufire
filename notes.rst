@@ -398,3 +398,12 @@ Log
 	* 0325	Reordered and categorized the functions of the module, filesys.
 	* 0325	Introduced filesys.requireAncestor, makeDir and stdPath.
 	* 0355	filesys.copy now support patterns.
+
+* 170829
+
+	* 0213	Bug fixed: filesys.copy and linkTree failed with recursive file patterns.
+	* 0334	Added a missing option, filesys.copyContent.autoClean.
+
+* 170829
+
+	* 1617	Fixed several bugs in the module, filesys.
