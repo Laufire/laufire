@@ -30,10 +30,9 @@ Pending
 """
 
 import os
-import re
-
 from os import mkdir, makedirs, unlink, rmdir
 from os.path import abspath, basename, commonprefix, dirname, exists, isdir, isfile, join as pathJoin, normpath, split as pathSplit, splitext
+import re
 
 from laufire.flow import forgive
 from laufire.logger import debug
@@ -128,8 +127,7 @@ def _getOpener(ext):
 		if hasattr(opener, 'upper'): # Only a module name is available. #Pending: Implement proper string validation.
 			return import_module(opener).open
 
-		else: # a module name and object name pair is available.
-			return lambda filePath: getattr(import_module(opener[0]), opener[1])(filePath).open
+		return lambda filePath: getattr(import_module(opener[0]), opener[1])(filePath).open
 
 	else:
 		return lambda filePath: open(filePath, 'rb')
@@ -288,7 +286,7 @@ def collectPaths(base='.', pattern='**', regex=False, followlinks=True):
 			Dirs[:] = [d for d, j in Joined.iteritems() if not match(excludes, j)] # Exclude dirs from recursion.
 
 		for d, j in [(d1, j1) for d1, j1 in Joined.iteritems() if d1 in Dirs and match(includes, j1)]: # Yield resulting dirs.
-			yield j, 2 if isdir('%s/%s' % (root, d)) else 3 # Check whether the path is a dir or a link.
+			yield j, 2 if isdir(joinPaths(root, d)) else 3 # Check whether the path is a dir or a link.
 
 		Files = [joinPaths(prefix, f) for f in Files]
 
@@ -376,7 +374,7 @@ def linkTree(srcPath, tgtPath, pattern='**', regex=False, autoClean=True, hardLi
 	dirMaker = makeDir if autoClean else makeMissingDir
 	linkWorker = link if hardLink else symlink # Hard links aren't the default, as they can't work across drives.
 	linker = linkWorker if autoClean or not exists(tgtPath) else lambda srcPath, tgtPath: (removePath(tgtPath), linkWorker(srcPath, tgtPath)) # File safety isn't a concern inside a missing dir.
-	parentMaker = ensureParent if pattern != '**' and regex == False else doNoting
+	parentMaker = ensureParent if pattern != '**' and not regex else doNoting
 
 	(ensureCleanDir if autoClean else ensureDir)(tgtPath)
 
@@ -559,5 +557,5 @@ def setup(Project):
 	fsRoot = abspath(_temp)
 	debug('fsRoot: %s' % _temp)
 
-from laufire.initializer import loadProjectSettings
+from laufire.initializer import loadProjectSettings #pylint: disable=C0413
 loadProjectSettings(setup)

@@ -11,7 +11,7 @@ def retryCommand(command, repeat, delay, **KWArgs):
 	"""
 	from laufire.flow import retry
 	from laufire.shell import run
-	from time import time, sleep
+	from time import time
 
 	State = {'tries': 0, 'exitCode': None}
 

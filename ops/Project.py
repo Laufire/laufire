@@ -1,7 +1,7 @@
 r"""The standard project file for the support package, laufire.
 """
 from laufire.initializer import init, stealCWD
-from Store import Store #pylint: disable=W0611
+from Store import Store
 
 stealCWD(__file__)
 
@@ -12,7 +12,7 @@ configPath = 'data/config.yaml'
 
 devMode = True
 
-logLevel = Store['logLevel']
+logLevel = Store['logLevel'] #pylint: disable=unsubscriptable-object
 
 # Init
 stealCWD(__file__)

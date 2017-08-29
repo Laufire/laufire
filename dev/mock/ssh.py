@@ -2,14 +2,12 @@ r"""
 A module to help with development.
 """
 import json
-import re
 
 from laufire.dev import getPretty
-from laufire.filesys import abspath, copy, ensureParent
+from laufire.filesys import basename, copy, ensureParent, joinPaths
 from laufire.flow import rob
 from laufire.logger import debug
 from laufire.shell import call, debugCall, assertShell
-from laufire.ssh import getTgtName
 
 # Helpers
 def getTgtName(tgtName, srcPath):
@@ -72,7 +70,7 @@ class SSHBridgeMocker:
 
 	def upload(self, srcPath, tgtPath=''):
 		if not tgtPath:
-			tgtPath = '%s/%s' % (self.Config['Gateway']['Paths']['temp'], getTgtName(None, srcPath))
+			tgtPath = joinPaths(self.Config['Gateway']['Paths']['temp'], getTgtName(None, srcPath))
 
 		else:
 			tgtPath = tgtPath.format(**self.Config['Gateway'])

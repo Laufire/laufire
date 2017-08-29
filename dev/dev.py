@@ -15,7 +15,7 @@ def _getPretty(Iterable, indent):
 	ret = ''
 
 	for key, value in pairs(Iterable):
-		if isIterable(value): #pylint: disable=W1504
+		if isIterable(value):
 			ret += u'%s%s:\n%s\n' % (u'\t' * indent, unicode(key), _getPretty(value, indent + 1))
 
 		else:
@@ -68,8 +68,6 @@ def details(Obj):
 
 # Makes pretty the given iterable (dictionary, list etc).
 def getPretty(Iterable):
-	ret = ''
-
 	if not isIterable(Iterable):
 		return str(Iterable)
 

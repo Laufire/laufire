@@ -8,11 +8,10 @@ import errno
 
 from os import listdir
 from os.path import basename, split as pathSplit
-from re import compile, sub
 
 import paramiko
 from laufire.extensions import Lazy
-from laufire.filesys import getPathType
+from laufire.filesys import getPathType, joinPaths, pair
 from laufire.flow import forgive, retry
 from laufire.logger import debug
 from laufire.shell import assertShell
@@ -34,7 +33,7 @@ def _upload(SFTP, localPath, remotePath):
 			raise err
 
 		for item in listdir(localPath): # #Note: With dir uploads, the uploads are merged (added / overwritten) with existing paths.
-			retry(lambda: _upload(SFTP, '%s/%s' % (localPath, item), '%s/%s' % (remotePath, item)))
+			retry(lambda: _upload(SFTP, *pair(localPath, remotePath, item))) #pylint: disable=cell-var-from-loop
 
 	else: # Path doesn't exist.
 		raise Exception('Invalid source path: %s' % localPath)
@@ -155,7 +154,7 @@ class SSHBridge:
 		r"""Uploads through the gateway are done to the temp dir by default.
 		"""
 		if not tgtPath:
-			tgtPath = '%s/%s' % (self.Config['Gateway']['Paths']['temp'], getTgtName(None, srcPath))
+			tgtPath = joinPaths(self.Config['Gateway']['Paths']['temp'], getTgtName(None, srcPath))
 
 		else:
 			tgtPath = tgtPath.format(**self.Config['Gateway'])

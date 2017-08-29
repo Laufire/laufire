@@ -54,6 +54,7 @@ disable = C0111, C0103, C0301, C0303, C0325, C0330, C1001,
 	I0011,
 	R0201, R0903, R0912, R0913, R0914, R0915,
 	W0142, W0232, W0312, W0403, W0603, W0621, W0622, W0633, W1201,
+	redefined-argument-from-local,
 
 [REPORTS]
 output-format = text

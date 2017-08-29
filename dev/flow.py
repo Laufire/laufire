@@ -81,5 +81,5 @@ def setup(Project):
 	defaultDelay = delay
 	tickTime = defaultDelay / 10
 
-from laufire.initializer import loadProjectSettings
+from laufire.initializer import loadProjectSettings #pylint: disable=C0413
 loadProjectSettings(setup)

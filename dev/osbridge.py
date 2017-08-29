@@ -5,9 +5,8 @@ OS Bridge
 A multi platform adapter.
 """
 import os
-import platform
-
 from os.path import expanduser
+import platform
 
 # Data
 platform = platform.system()

@@ -407,3 +407,4 @@ Log
 * 170829
 
 	* 1617	Fixed several bugs in the module, filesys.
+	* 1740	Linted the scripts.

@@ -10,6 +10,9 @@ r"""A module to help with storing validated data.
 #Later: Branch level hooks that are to be called when any of its Children are changed.
 
 """
+
+#pylint: disable=redefined-argument-from-local
+
 import re
 
 from os.path import exists

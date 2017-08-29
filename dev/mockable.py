@@ -1,7 +1,6 @@
 r"""
 A module with constructors for mockable objects and their mocks.
 """
-from laufire.logger import log
 
 # State
 Gateway = None

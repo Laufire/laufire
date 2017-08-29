@@ -15,5 +15,5 @@ def interact(func, prompt='>'):
 		except EOFError:
 			break
 
-		except Exception as e:
+		except Exception as e: #pylint: disable=broad-except
 			print e
