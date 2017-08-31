@@ -293,6 +293,20 @@ def collectPaths(base='.', pattern='**', regex=False, followlinks=True):
 		for file in [f for f in Files if not (excludes and match(excludes, f)) and match(includes, f)]:
 			yield file, 1
 
+def glob(base='.', pattern='**', pathType=None):
+	r"""Yields the paths under the given dir matching the given glob pattern.
+	"""
+	jp = joinPaths
+
+	if pathType is None:
+		for path, dummy in collectPaths(base, pattern):
+			yield jp(base, path)
+
+	else:
+		for path, _pathType in collectPaths(base, pattern):
+			if _pathType == pathType:
+				yield jp(base, path)
+
 def getPathPairs(source, target, pattern='**', regex=False):
 	r"""Iterates over the given patterns and yields a tuple with source and destination paths.
 	"""

@@ -408,3 +408,7 @@ Log
 
 	* 1617	Fixed several bugs in the module, filesys.
 	* 1740	Linted the scripts.
+
+* 170830
+
+	* 1607	Introduced filesys.glob, a simpler wrapper around filesys.collectPaths.
