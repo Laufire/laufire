@@ -1,9 +1,10 @@
 r"""The standard project file for the support package, laufire.
 """
 from laufire.initializer import init, stealCWD
-from Store import Store
 
 stealCWD(__file__)
+
+from Store import Store
 
 # Config
 name = 'laufire'

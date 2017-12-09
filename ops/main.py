@@ -9,7 +9,6 @@ import re
 
 from ec.ec import arg, settings, task
 from ec.types import basics, multi
-from laufire.filesys import removePath
 
 from Project import Config
 
@@ -19,11 +18,32 @@ testsDir = Paths['tests']
 testFilePattern = '^test_(\\w+).py$'
 TestNames = list(re.search(testFilePattern, i).group(1) for i in os.listdir(testsDir) if re.search(testFilePattern, i))
 
+# Helpers
+def call(*Args, **KWArgs):
+	from laufire.shell import assertShell, call
+	assertShell(call(*Args, **KWArgs))
+
+# Tasks
 @task(alias='c')
 def cleanUp():
 	r"""Cleans up residue from the project dir.
 	"""
+	from laufire.filesys import removePath
 	removePath(Paths['temp'])
+
+@task(alias='b')
+def build(target='./dist'):
+	r"""Builds a wheel under the given dir.
+	"""
+	call('python setup.py bdist_wheel', cwd='..')
+
+	return 'Wheel built, under: %s' % target
+
+@task(alias='id')
+def installDev(): # #Note: The project needs the library to start. Hence this command could be used, only to replace a production version, with a development one.
+	r"""Installs a development version of the library.
+	"""
+	call('python setup.py develop', cwd='..')
 
 @task(alias='t')
 @arg(type=multi.one_of(TestNames + ['*']), sep='\n\t')

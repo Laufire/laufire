@@ -24,11 +24,13 @@
 !.editorconfig
 !.pylintrc
 
-# Project specific ignores
+# Python Ignores
+/dist
+/build
+*.egg-info
 
-## Dev Packages
-/ops/laufire
-/ops/ec
+# Project specific ignores.
+# None, yet.
 
 ## Paths starting with an _ are considered to be working areas.
 _*

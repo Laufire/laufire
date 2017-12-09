@@ -28,7 +28,7 @@ Modules
 ToDo
 ----
 
-* Review the necessity of the ops dir.
+* Create a setup file, to properly list dependencies.
 
 * Try the package on linux.
 
@@ -62,9 +62,11 @@ Pending
 Later
 -----
 
+* Think of maintaining a package repo. It seems like easy_install can use simple file servers as repos. Hence, no PyPI server would be required.
+
 * Measure the speed of the package and improve if necessary.
 
-* Add tests.
+* Complete the test suite.
 
 * Add support for LZMA, without delegating it to binaries.
 
@@ -412,3 +414,14 @@ Log
 * 170830
 
 	* 1607	Introduced filesys.glob, a simpler wrapper around filesys.collectPaths.
+
+* 171209
+
+	*	0536	Wrote a preliminary setup file.
+	* 0659	Made the module deployable.
+	* 0701	Released v0.0.1.
+
+* 180221
+
+	*	0602	Introduced a Windows specific requirements file.
+	* 0607	Open-sourced the project with MIT license.
