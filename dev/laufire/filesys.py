@@ -132,8 +132,8 @@ def _getOpener(ext):
 	else:
 		return lambda filePath: open(filePath, 'rb')
 
-def doNoting(*dummy, **dummy1):
-	pass
+def doNoting(firstArg, *dummy, **dummy1):
+	return firstArg
 
 # Exports
 ## Path functions

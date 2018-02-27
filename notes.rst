@@ -425,3 +425,7 @@ Log
 
 	*	0602	Introduced a Windows specific requirements file.
 	* 0607	Open-sourced the project with MIT license.
+
+* 180227
+
+	*	1925	Bug fixed: The nix implementation of some FileSys calls were buggy.
