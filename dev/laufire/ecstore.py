@@ -1,6 +1,6 @@
 r"""A module to help with storing validated data.
 
-#Pending: Fix: ConfiguredStore doesn't seem to be cleared with their namespace. To emulate the condition, call the store from function and check for the locked state of the db, even after the function exits.
+#Pending: Fix: ConfiguredStore doesn't seem to be cleared, along with their namespace. To simulate the condition, call the store from function and check for the locked state of the db, even after the function exits.
 #Later: Fix: Calling var from the command line doesn't pretty print the branches.
 #Later: Fix: Make dump to use pPrint.
 #Later: The commad setup followed by any text triggers a overwrite, use ec inputs to conver the arg to boolean.

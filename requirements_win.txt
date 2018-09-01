@@ -1,0 +1,4 @@
+# Windows specific requirements.
+
+-r requirements.txt
+pypiwin32==219
