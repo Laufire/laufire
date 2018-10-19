@@ -429,3 +429,7 @@ Log
 * 180227
 
 	*	1925	Bug fixed: The nix implementation of some FileSys calls were buggy.
+
+* 191019
+
+	*	1845	Bug fixed: The package dependencies weren't listed properly.

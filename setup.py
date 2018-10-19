@@ -5,16 +5,16 @@ from platform import system
 from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
-reqFile = 'requirements%s.txt' % ('' if system != 'Windows' else '_win')
+reqFile = 'requirements%s.txt' % ('' if system() != 'Windows' else '') # #ToDo: Have OS spcecific requirements.
 
 # Data
 requirements = [l for l in open(path.join(here, reqFile), 'rb').read().splitlines() if l and l[0] != '#']
-description = "laufire - a set of utilities to help with automation",
+description = 'laufire - a set of utilities to help with automation'
 srcDir = 'dev'
 
 setup(
   name='laufire',
-  version='0.0.1',
+  version='0.0.2',
 	package_dir={'': srcDir},
   packages=find_packages(srcDir),
   description=description,
