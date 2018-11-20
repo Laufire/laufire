@@ -19,7 +19,7 @@ TestConfig = Config['Testing']
 # Helpers
 def getFSDict(prefix, Structure, Buffer):
 	r"""
-	Returns a dictionaty of paths and pathTyeps.
+	Returns the {paths: pathTypes} dict of the passed dir structure.
 	"""
 	if isinstance(Structure, list):
 		for item in Structure:
@@ -28,7 +28,7 @@ def getFSDict(prefix, Structure, Buffer):
 	elif isinstance(Structure, basestring):
 		Buffer['%s/%s' % (prefix, Structure) if prefix else Structure] = 1
 
-	else:
+	else: # Assume the structure to be a dict.
 		k = Structure.keys()[0]
 		dir = '%s/%s' % (prefix, k) if prefix else k
 		Buffer[dir] = 2
@@ -135,6 +135,8 @@ class TestFileSys(unittest.TestCase):
 			('**!*.txt', r'[^\/]*\.txt', True),
 			('*!*fi*.tx*', r'.*\/.*|[^\/]*fi[^\/]*\.tx[^\/]*', True),
 		)
+
+		#Pending: Test regex patterns.
 
 	def test_copy(self): # #Pending: Test all the argument combinations.
 		rebuildStructures()

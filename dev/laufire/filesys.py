@@ -148,9 +148,7 @@ def joinPaths(*Paths):
 	r"""
 	Joins the given Paths.
 	"""
-	ret = '/'.join(Paths)
-
-	return ret if Paths[0] else ret[1:]
+	return '/'.join(Paths)
 
 def resolve(basePath, relation):
 	r"""Resolves a relative path of the given basePath.
@@ -277,10 +275,8 @@ def collectPaths(base='.', pattern='**', regex=False, followlinks=True):
 	match = re.match
 
 	for root, Dirs, Files in os.walk(base, followlinks=followlinks):
-
 		prefix = stdPath(root[baseLen+1:])
-
-		Joined = {d: joinPaths(prefix, d) for d in Dirs}
+		Joined = {d: joinPaths(*(prefix, d) if prefix else (d,)) for d in Dirs}
 
 		if excludes:
 			Dirs[:] = [d for d, j in Joined.iteritems() if not match(excludes, j)] # Exclude dirs from recursion.
@@ -288,7 +284,7 @@ def collectPaths(base='.', pattern='**', regex=False, followlinks=True):
 		for d, j in [(d1, j1) for d1, j1 in Joined.iteritems() if d1 in Dirs and match(includes, j1)]: # Yield resulting dirs.
 			yield j, 2 if isdir(joinPaths(root, d)) else 3 # Check whether the path is a dir or a link.
 
-		Files = [joinPaths(prefix, f) for f in Files]
+		Files = [joinPaths(*(prefix, f) if prefix else (f,)) for f in Files]
 
 		for file in [f for f in Files if not (excludes and match(excludes, f)) and match(includes, f)]:
 			yield file, 1
