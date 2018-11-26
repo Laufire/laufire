@@ -1,4 +1,0 @@
-# Windows specific requirements.
-# #ToDo: Make the setup script to utilize this file. This couldn't be done, as the way to specify OS specific requirements, during installation is not known.
--r requirements.txt
-pypiwin32==219

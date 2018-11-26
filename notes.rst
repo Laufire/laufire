@@ -6,7 +6,7 @@ laufire
 Idea
 ----
 
-* The idea is to have a sharable, utility module across the projects to save on development and debugging time.
+* The idea is to have a sharable utility module, across projects to save on development and debugging time.
 
 Modules
 -------
@@ -25,10 +25,15 @@ Modules
 
 * **ecstore** - provide persistent storage facilities.
 
+Caveats
+-------
+
+* In Windows, some functionality requires admin priviliges.
+
 ToDo
 ----
 
-* Create a setup file, to properly list dependencies.
+* Update the dependencies.
 
 * Make the package OS independent.
 
@@ -419,24 +424,28 @@ Log
 
 * 171209
 
-	*	0536	Wrote a preliminary setup file.
+	* 0536	Wrote a preliminary setup file.
 	* 0659	Made the module deployable.
 	* 0701	Released v0.0.1.
 
 * 180221
 
-	*	0602	Introduced a Windows specific requirements file.
+	* 0602	Introduced a Windows specific requirements file.
 	* 0607	Open-sourced the project with MIT license.
 
 * 180227
 
-	*	1925	Bug fixed: The nix implementation of some FileSys calls were buggy.
+	* 1925	Bug fixed: The nix implementation of some FileSys calls were buggy.
 
 * 181019
 
-	*	1845	Bug fixed: The package dependencies weren't listed properly.
+	* 1845	Bug fixed: The package dependencies weren't listed properly.
 
 * 181120
 
-	*	2045	Fixed a bug in the nix implementation of filesys.collectPaths.
+	* 2045	Fixed a bug in the nix implementation of filesys.collectPaths.
  
+ * 181126
+
+	* 1349	Made the requirements file platform independent.
+	

@@ -4,11 +4,17 @@ from os import path
 from platform import system
 from setuptools import setup, find_packages
 
-here = path.abspath(path.dirname(__file__))
-reqFile = 'requirements%s.txt' % ('' if system() != 'Windows' else '') # #ToDo: Have OS spcecific requirements.
+# Helpers
+def getRequirementsFromFile(filePath):
+  return [l for l in open(filePath, 'rb').read().splitlines() if l and l[0] != '#']
+
+def getRequirements():
+  scriptDir = path.abspath(path.dirname(__file__))
+  reqFile = 'requirements.txt'
+  
+  return getRequirementsFromFile(path.join(scriptDir, reqFile))
 
 # Data
-requirements = [l for l in open(path.join(here, reqFile), 'rb').read().splitlines() if l and l[0] != '#']
 description = 'laufire - a set of utilities to help with automation'
 srcDir = 'dev'
 
@@ -23,7 +29,7 @@ setup(
   author='Laufire Technologies',
   platforms='any',
   include_package_data=True,
-  install_requires=requirements,
+  install_requires=getRequirements(),
 	python_requires='>=2.7.10', #ToDo: Find and add the minimum required verion of python. This requires a scanning of the requirements and/or a test suite to figure out the answer.
 	# dependency_links = [''], #Note: This could be helpful, in hosting a minimal package repositoty.
   license="MIT",
