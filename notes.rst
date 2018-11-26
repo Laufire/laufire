@@ -30,7 +30,9 @@ ToDo
 
 * Create a setup file, to properly list dependencies.
 
-* Try the package on linux.
+* Make the package OS independent.
+
+	* **shell.run(..., shell=True)** doesn't run as expected on macs.
 
 * Replace YamlEx with a generic dictionary (ordered) dictionary templater, so to allow using other data formats for interpolation.
 
@@ -43,7 +45,7 @@ Pending
 
 * Add a requirements file.
 
-* Fix filesys.collectPaths. It has a lot of differences from the existing glob libraries. Also try to yield paths instead of returnig them.
+* Fix filesys.collectPaths. It has a lot of differences from the existing glob libraries.
 
 * Setting 'logLevel' through ecstore init hooks, isn't working if the underlying logger was loaded by some other module, before initialization (this loggerd will have the default name <unnamed*).
 
@@ -430,6 +432,11 @@ Log
 
 	*	1925	Bug fixed: The nix implementation of some FileSys calls were buggy.
 
-* 191019
+* 181019
 
 	*	1845	Bug fixed: The package dependencies weren't listed properly.
+
+* 181120
+
+	*	2045	Fixed a bug in the nix implementation of filesys.collectPaths.
+ 

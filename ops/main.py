@@ -53,7 +53,6 @@ def test(testName='*', isVerbose=False, debug=False):
 	r"""The task under development.
 	"""
 	from laufire.shell import run
-
 	cleanUp()
 
 	if debug:

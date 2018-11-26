@@ -1,6 +1,6 @@
 ---
 Paths:
-  workDir: '../../../_work/laufire'
+  workDir: './_work'
   temp: '{{ Paths.workDir }}/_temp' # #Note: {{ fsRoot }} isn't used, as the file is also used by the tests.
   tests: 'testing/tests'
 
