@@ -33,6 +33,8 @@ Caveats
 ToDo
 ----
 
+* Write more tests.
+
 * Update the dependencies.
 
 * Make the package OS independent.
@@ -448,4 +450,4 @@ Log
  * 181126
 
 	* 1349	Made the requirements file platform independent.
-	
+	* 1512	Relaxed dependency versions, to mitigate package conflicts.

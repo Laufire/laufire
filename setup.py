@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from os import path
-from platform import system
 from setuptools import setup, find_packages
 
 # Helpers
@@ -20,7 +19,7 @@ srcDir = 'dev'
 
 setup(
   name='laufire',
-  version='0.0.2',
+  version='0.0.3',
 	package_dir={'': srcDir},
   packages=find_packages(srcDir),
   description=description,

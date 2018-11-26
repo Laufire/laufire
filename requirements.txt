@@ -1,9 +1,9 @@
 # #Note: Lines starting with a '#' are ignored.
 
-HiYaPyCo==0.4.0
-PyYAML==3.11
-colorama==0.3.3
-matplotlib==2.0.0b4
-paramiko==2.0.2
-pyaes==1.6.0
-pypiwin32==219;platform_system=="Windows"
+HiYaPyCo>=0.4.0
+PyYAML>=3.11
+colorama>=0.3.3
+matplotlib>=2.0.0b4
+paramiko>=2.0.2
+pyaes>=1.6.0
+pypiwin32>=219;platform_system=="Windows"
