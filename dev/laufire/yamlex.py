@@ -8,6 +8,7 @@ A wrapper around HiYaPyCo that supports:
 * Runtime variables.
 
 #Later: Allow external template sources. ie: The source data won't be in the rendered data. This passibly could be a KWArg named, env.
+#Later: Check whether the dependency on HiYaPyCo could be shed, especially to avoid depending on Jinja2, thus enabling the possibility for a simpler template syntax (might be with relative templating).
 """
 from hiyapyco import HiYaPyCo, dump, odyldo
 from jinja2 import Template
@@ -58,6 +59,7 @@ class YamlEx:
 		r"""Does the interpolation.
 		"""
 		self.HiYaPyCo._interpolate(self.Data) #pylint: disable=W0212
+
 		return self
 
 	def load(self, filePath, interpolate=True):

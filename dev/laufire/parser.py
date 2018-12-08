@@ -3,6 +3,8 @@ parse
 =====
 
 A set of functions to parse data files of various data formats.
+
+#ToDo: Allow KWArgs to the parsers, so to make configuring possible, especially to turn-off templating.
 """
 from os.path import splitext
 

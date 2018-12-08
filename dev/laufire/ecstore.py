@@ -21,9 +21,10 @@ from json import loads, dumps
 from collections import OrderedDict
 
 from ec.utils import get
-from laufire.sqlitex import SQLiteDB, SQLiteSimpleTable
-from laufire.extensions import combine
+from laufire.extensions import combine, nest, unnest
 from laufire.parser import parse as _parse
+from laufire.sqlitex import SQLiteDB, SQLiteSimpleTable
+from laufire.yamlex import YamlEx
 
 # State
 State = []
@@ -52,7 +53,7 @@ def getSTDIN():
 
 # Workers
 def collectChildren(Obj):
-	AttrDict = {} # Used to get the name of vars, without hooks.
+	AttrDict = {} # Used to get the name of vars, which do not have hooks.
 
 	for attr in [attr for attr in dir(Obj) if attr[0] != '_']:
 		Child = getattr(Obj, attr)
@@ -89,7 +90,7 @@ def getConfigsFromDict(Dict, branch, Buffer):
 		route = getRoute(branch, key)
 		Routes.append(route)
 
-		if  hasattr(value, 'iteritems'):
+		if hasattr(value, 'iteritems'):
 			getConfigsFromDict(value, route, Buffer)
 
 		else:
@@ -227,6 +228,12 @@ class ConfiguredStore:
 			if Config and 'live' in Config:
 				Config['hook'](value, 'init')
 
+		Y = YamlEx()
+		Y.setData(nest(Values))
+		Y.interpolate()
+
+		self._Values = unnest(Y.Data)
+
 	def __del__(self):
 		if hasattr(self, '_Store'):
 			self.close()
@@ -302,7 +309,7 @@ class ConfiguredStore:
 		if Routes:
 			name = Config.get('name')
 
-			if name: #  # We've got a branch
+			if name: # # We've got a branch
 				print '\n%s%s:' % (prefix, name) # #Note" Tabs aren't used for branch indention, due the space constrains of the terminal.
 
 				for route in Routes:
@@ -398,7 +405,7 @@ def branch(Obj, **Config):
 
 def var(hook=None, **Config):
 	r"""A decorator / function for declaring vars.
-	Properties are declared using var as a function.
+	Properties are declared by using var, as a simple function.
 	Properties with hooks are defined with using this function as a decorator.
 
 	Config is as same as ec's ArgConfig.

@@ -52,6 +52,8 @@ Pending
 
 * Add a requirements file.
 
+* Write examples / tests.
+
 * Fix filesys.collectPaths. It has a lot of differences from the existing glob libraries.
 
 * Setting 'logLevel' through ecstore init hooks, isn't working if the underlying logger was loaded by some other module, before initialization (this loggerd will have the default name <unnamed*).
@@ -446,8 +448,13 @@ Log
 * 181120
 
 	* 2045	Fixed a bug in the nix implementation of filesys.collectPaths.
- 
+
  * 181126
 
 	* 1349	Made the requirements file platform independent.
 	* 1512	Relaxed dependency versions, to mitigate package conflicts.
+
+* 181208
+
+	* 1430	Introduced extensions.nest.
+	* 1510	Introduced templataing to ecstore.values.

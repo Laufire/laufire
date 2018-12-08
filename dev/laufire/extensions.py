@@ -42,7 +42,7 @@ def values(Iterable):
 	"""
 	return Iterable.values() if hasattr(Iterable, 'values') else Iterable
 
-def flatten(Iterable, recurse=False):
+def flatten(Iterable, recurse=False): #ToDo: Make this a generator.
 	r"""Collects all the values from the given iterable.
 
 	#From: http://stackoverflow.com/questions/13490963/how-to-flatten-a-nested-dictionary-in-python-2-7x
@@ -126,6 +126,25 @@ def unnest(Dict, separator='/', Target=None):
 
 	for val, RouteParts, dummy in walk(Dict):
 		Target[separator.join(RouteParts)] = val
+
+	return Target
+
+def nest(Dict, separator='/', Target=None):
+	r"""Gets a routed dictionary from a nested one.
+	"""
+	if Target is None:
+		Target = {}
+
+	for key, val in Dict.iteritems():
+		RouteParts = key.split(separator)
+		CurrentBase = Target
+		for k in RouteParts[:-1]:
+			if not k in CurrentBase:
+				CurrentBase[k] = {}
+
+			CurrentBase = CurrentBase[k]
+
+		CurrentBase[RouteParts[-1]] = val
 
 	return Target
 
