@@ -27,6 +27,7 @@ Pending
 	* Add a function to copy file attributes, etc.
 	* Add an isOk call to verify the correctness of the files (to avoid unresolved links etc).
 	* Check: Use absPaths for robustness of the calls.
+	* Think of an interactive mode and a mock mode (especially for deleting or writing to files), to ease development.
 """
 
 import os
@@ -557,6 +558,21 @@ def restore(backupPath, srcPath=None): #Pending: Add a way to handle time string
 
 	_removePath(srcPath)
 	os.rename(backupPath, srcPath)
+
+class TempFSRoot():
+	def __init__(self, tempFSRoot):
+		self.originalFSRoot = fsRoot
+		self.tempFSRoot = tempFSRoot
+
+	def __enter__(self):
+		global fsRoot
+
+		fsRoot = self.tempFSRoot
+
+	def __exit__(self, type, value, traceback):
+		global fsRoot
+
+		fsRoot = self.originalFSRoot
 
 # Init
 def setup(Project):

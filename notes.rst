@@ -458,3 +458,4 @@ Log
 
 	* 1430	Introduced extensions.nest.
 	* 1510	Introduced templataing to ecstore.values.
+	* 1950	Introduced filesys.TempFSRoot, to help with context switching during file operations.
