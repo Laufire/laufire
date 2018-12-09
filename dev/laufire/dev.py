@@ -7,6 +7,7 @@ A module to help with develpment.
 #ToDo: Ensure that unicode's are handled well by get pretty.
 #Later: Think of adding some functions, like scan, to the built-ins, so that there can be used without importing.
 """
+from sys import stdout
 from laufire.flow import forgive
 from laufire.extensions import pairs, isIterable
 
@@ -40,8 +41,9 @@ def interactive(func, message=None, raiseError=False):
 
 			return e
 
-def pause(message='Paused! Press return to continue...'):
-	raw_input(message)
+def pause(message='Paused! Press return to continue...', onlyOnTTY=True):
+	if not onlyOnTTY or stdout.isatty():
+		raw_input(message)
 
 def peek(val):
 	print val

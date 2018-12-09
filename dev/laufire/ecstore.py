@@ -8,7 +8,7 @@ r"""A module to help with storing validated data.
 #Later: vars could use Classes to define separate hooks for get, set etc; instead of using the current, two param function hooks. Note, add this feature, while retaining the single function hook, without commands, which is to be called on init and set.
 #Later: Think of using **with blocks** for declaration, instead of decorators, as the syntax looks cleaner. #Refer: http://stackoverflow.com/questions/1255914/finding-functions-defined-in-a-with-block
 #Later: Branch level hooks that are to be called when any of its Children are changed.
-
+#ToDo: Add a delete command.
 """
 
 #pylint: disable=redefined-argument-from-local

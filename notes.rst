@@ -459,3 +459,7 @@ Log
 	* 1430	Introduced extensions.nest.
 	* 1510	Introduced templataing to ecstore.values.
 	* 1950	Introduced filesys.TempFSRoot, to help with context switching during file operations.
+
+* 181209
+
+	* 1647	Introduced dev.pause.onlyOnTTY, to skip pausing inside piped processes.
