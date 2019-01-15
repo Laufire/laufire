@@ -21,6 +21,7 @@ Caution
 Pending
 -------
 
+	* Add a way to check whether the given path is a link. Think of producing a generic getFileInfo function, too.
 	* Check: Could links be removed, even outside the fsRoot?
 	* The module doesn't handle unicode file-names. So does the package zipfile of Python2. It depends upon the type of the input path strings. ie: To call collectPaths on a dir with an unicode file name, the source dir should also be in unicode.
 	* Support file encodings.
@@ -28,12 +29,21 @@ Pending
 	* Add an isOk call to verify the correctness of the files (to avoid unresolved links etc).
 	* Check: Use absPaths for robustness of the calls.
 	* Think of an interactive mode and a mock mode (especially for deleting or writing to files), to ease development.
+	* Match the pattrns with the path names with an initial slash, so to unify the access of the files in the root and the sub-dirs.
+	
+Guides
+------
+Glob
+~~~~
+	\*\* : anything  (including empty strings)
+	\*  : anything but a slash (including empty strings)
+	other characters : as is
 """
 
 import os
 from os import mkdir, makedirs, unlink, rmdir
 from os.path import abspath, basename, commonprefix, dirname, exists, isdir, isfile, join as pathJoin, normpath, split as pathSplit, splitext
-import re
+from re import match, escape as escapeRe
 
 from laufire.flow import forgive
 from laufire.logger import debug
@@ -58,7 +68,7 @@ def globToRe(pattern):
 		c = pattern[i]
 
 		if c != '*':
-			ret += re.escape(c)
+			ret += escapeRe(c)
 
 		else:
 			if pattern[i + 1] != '*':
@@ -73,6 +83,13 @@ def globToRe(pattern):
 	ret += r'$'
 
 	return ret
+
+def globsToIncludesAndExcludes(pattern):
+	Split = pattern.split('!')
+	includes = r'|'.join([globToRe(x) for x in Split[0].split('|')]) if Split else r'.*'
+	excludes = r'|'.join([globToRe(x) for x in Split[1].split('|')]) if len(Split) > 1 else None
+	
+	return includes, excludes
 
 makeMissingDir = lambda path: exists(path) or makeDir(path)
 
@@ -139,6 +156,15 @@ def doNoting(firstArg, *dummy, **dummy1):
 # Exports
 ## Path functions
 stdPath = (lambda path: path.replace('\\', '/')) if sep != '/' else doNoting # Standardizes the given path.
+
+def filterPaths(Paths, pattern):
+	r"""Filters the given Paths with the given pattern.
+	"""
+	includes, excludes = globsToIncludesAndExcludes(pattern)
+	
+	for path in Paths:
+		if match(includes, path) and not match(excludes, path):
+			yield path
 
 def pair(src, tgt, postFix):
 	r"""Returns a pair of the given post-fix affixed source and target paths.
@@ -252,11 +278,6 @@ def collectPaths(base='.', pattern='**', regex=False, followlinks=True):
 			(regex): A '|' separated list of regex. Includes and excludes are separated by a '$$$'. Defaults to all ('.*').
 		regex (bool, False): When set to True, Includes and Excludes are parsed as regular expressions, instead of as globs.
 
-	Glob guide:
-		** : anything  (including empty strings)
-		*  : anything but a slash (including empty strings)
-		other characters : as is
-
 	#From: http://stackoverflow.com/questions/5141437/filtering-os-walk-dirs-and-files
 	#Note: The globs are not regular globs. But a simplified versions.
 	#Note: Exclusions override inclusions.
@@ -267,14 +288,10 @@ def collectPaths(base='.', pattern='**', regex=False, followlinks=True):
 		excludes = Split[1] if len(Split) > 1 else None
 
 	else:
-		# transform globs to regular expressions
-		Split = pattern.split('!')
-		includes = r'|'.join([globToRe(x) for x in Split[0].split('|')]) if Split else r'.*'
-		excludes = r'|'.join([globToRe(x) for x in Split[1].split('|')]) if len(Split) > 1 else None
+		includes, excludes = globsToIncludesAndExcludes(pattern)
 
 	baseLen = len(base)
-	match = re.match
-
+	
 	for root, Dirs, Files in os.walk(base, followlinks=followlinks):
 		prefix = stdPath(root[baseLen+1:])
 		Joined = {d: joinPaths(*(prefix, d) if prefix else (d,)) for d in Dirs}
@@ -290,6 +307,9 @@ def collectPaths(base='.', pattern='**', regex=False, followlinks=True):
 		for file in [f for f in Files if not (excludes and match(excludes, f)) and match(includes, f)]:
 			yield file, 1
 
+def filter(files, pattern):
+	regexp = globToRe(pattern)
+	
 def glob(base='.', pattern='**', pathType=None):
 	r"""Yields the paths under the given dir matching the given glob pattern.
 	"""

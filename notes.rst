@@ -463,3 +463,7 @@ Log
 * 181209
 
 	* 1647	Introduced dev.pause.onlyOnTTY, to skip pausing inside piped processes.
+
+* 190115
+
+	* 1315	Introduced filesys.filterPaths, to utillize the pattern filtering capabilities of filesys on path lists from external sources.
