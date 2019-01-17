@@ -372,31 +372,30 @@ def rename(srcPath, tgtPath, autoClean=True):
 def copy(srcPath, tgtPath, pattern='**', regex=False, autoClean=True):
 	r"""Copies one path to another.
 	"""
-	debug('copy: %s => %s' % (srcPath, tgtPath))
-
 	if autoClean:
 		removePath(tgtPath) # #Note: This also ensures that the target is under fsRoot.
 
 	pathType = getPathType(srcPath)
+	fileCopier = lambda src, tgt: copyContent(src, tgt, autoClean=False)
 
 	if not pathType:
 		ensureParent(tgtPath)
 
 	if pathType == 1:
-		copyContent(srcPath, tgtPath)
+		fileCopier(srcPath, tgtPath)
 
 	else:
 		dirMaker = makeDir if autoClean else makeMissingDir
-		copier = lambda src, tgt: copyContent(src, tgt, autoClean=False) if autoClean or not exists(tgtPath) else copyContent # File safety isn't a concern inside a missing dir.
+		copier = fileCopier if autoClean or not exists(tgtPath) else copyContent # File safety isn't a concern inside a missing dir.
 
 		makeMissingDir(tgtPath)
 
-		for Path in collectPaths(srcPath, pattern, regex):
-			if Path[1] != 1:
-				dirMaker(joinPaths(tgtPath, Path[0]))
+		for path, pathType in collectPaths(srcPath, pattern, regex):
+			if pathType != 1:
+				dirMaker(joinPaths(tgtPath, path))
 
 			else:
-				copier(*pair(srcPath, tgtPath, Path[0]))
+				copier(*pair(srcPath, tgtPath, path))
 
 def linkTree(srcPath, tgtPath, pattern='**', regex=False, autoClean=True, hardLink=False):
 	r"""Re-creates the structure of the source at the target by creating dirs and linking files.
@@ -512,11 +511,10 @@ def copyContent(srcPath, tgtPath, autoClean=True):
 
 	# #Note: Unlike shutil.copy attributes aren't copied.
 	"""
-	debug('copy: %s => %s' % (srcPath, tgtPath))
-
 	if (removePath(tgtPath) == 1 if autoClean else True): # Ensure parent only if the path is not removed.
 		ensureParent(tgtPath)
 
+	debug('copy: %s => %s' % (srcPath, tgtPath))
 	with open(tgtPath, 'wb') as tgt:
 		for chunk in iterateContent(srcPath):
 			tgt.write(chunk)
